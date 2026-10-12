@@ -15,7 +15,7 @@ class SubtaskRepository internal constructor(private val database: TdmkDatabase)
         val owner = parent(taskId)
         var id: String
         do { id = UUID.randomUUID().toString() } while (dao.find(id) != null ||
-            database.tasks().find(id) != null || database.lists().find(id) != null)
+            database.tasks().find(id) != null || database.lists().find(id) != null || database.notes().find(id) != null)
         val child = Subtask(id, taskId, valid, dao.forParent(taskId).size.toLong())
         dao.insert(child)
         if (owner.completedAt != null) TaskRepository(database).reopen(taskId)

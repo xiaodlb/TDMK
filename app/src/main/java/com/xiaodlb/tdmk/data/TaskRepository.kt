@@ -21,7 +21,7 @@ class TaskRepository internal constructor(
     fun create(content: TaskContent): Task = transaction {
         val valid = validate(content)
         var id: String
-        do { id = UUID.randomUUID().toString() } while (dao.find(id) != null || database.lists().find(id) != null || database.subtasks().find(id) != null)
+        do { id = UUID.randomUUID().toString() } while (dao.find(id) != null || database.lists().find(id) != null || database.subtasks().find(id) != null || database.notes().find(id) != null)
         val time = instant()
         Task(id, valid.listId!!, valid.title, valid.scheduledDate, valid.priority, valid.shortNote,
             valid.reminderTime, null, null, time, time).also { dao.insert(it) }

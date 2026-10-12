@@ -44,6 +44,7 @@ dependencies {
     // Align the app/test serialization runtime with Room's migration-helper requirement.
     // Android test consistent resolution otherwise pins core 1.7.3 against JSON 1.8.1.
     implementation(platform(libs.kotlinx.serialization.bom))
+    implementation(libs.kotlinx.serialization.json)
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.activity.compose)
     testImplementation(libs.junit)

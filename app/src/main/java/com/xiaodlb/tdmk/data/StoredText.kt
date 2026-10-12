@@ -15,9 +15,10 @@ internal object StoredText {
         return value
     }
 
-    fun label(value: String): String = validate(value).trim {
+    fun trim(value: String): String = validate(value).trim {
         it in '\u0009'..'\u000D' || it == ' ' || it == '\u0085' || it == '\u00A0' ||
             it == '\u1680' || it in '\u2000'..'\u200A' || it == '\u2028' || it == '\u2029' ||
             it == '\u202F' || it == '\u205F' || it == '\u3000'
-    }.also { require(it.isNotEmpty()) { "Label must contain a non-whitespace scalar" } }
+    }
+    fun label(value: String): String = trim(value).also { require(it.isNotEmpty()) { "Label must contain a non-whitespace scalar" } }
 }
