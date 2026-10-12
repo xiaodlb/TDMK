@@ -35,6 +35,7 @@ fun NavigationShell() {
         contentWindowInsets = WindowInsets.safeDrawing,
         topBar = {
             TopAppBar(
+                windowInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal + WindowInsetsSides.Top),
                 title = { Text(stringResource(if (settings) R.string.settings else R.string.app_name)) },
                 navigationIcon = {
                     if (settings) IconButton(onClick = { route = MainTab.Home.name }) {
@@ -49,7 +50,7 @@ fun NavigationShell() {
             )
         },
         bottomBar = {
-            NavigationBar {
+            NavigationBar(windowInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom)) {
                 MainTab.entries.forEach { destination ->
                     NavigationBarItem(
                         selected = tab == destination,
