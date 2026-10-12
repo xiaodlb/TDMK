@@ -16,6 +16,8 @@ class TaskRepository internal constructor(
     private val dao = database.tasks()
     fun active() = dao.active()
     fun completed() = dao.completed()
+    /** Date/list views need unfinished AND stored completed records; TaskViews supplies eligibility. */
+    fun viewCandidates() = dao.viewCandidates()
     fun read(id: String): Task = dao.find(id) ?: throw NoSuchElementException("Unknown task ID: $id")
 
     fun create(content: TaskContent): Task = transaction {

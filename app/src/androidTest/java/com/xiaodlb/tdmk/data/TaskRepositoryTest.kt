@@ -12,6 +12,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.time.Instant
+import java.time.Clock
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
@@ -109,6 +110,34 @@ class TaskRepositoryTest {
 
     private suspend fun awaitRows(channel: Channel<List<Task>>, predicate: (List<Task>) -> Boolean) {
         withTimeout(10000) { while (!predicate(channel.receive())) { /* Await real Room invalidation. */ } }
+    }
+
+    @Test
+    fun viewCandidatesKeepSameDayCompletionsAndEmitNewStoredRecords(): Unit = runBlocking {
+        val tasks = provider.getTaskRepository()
+        val lists = provider.getListRepository()
+        val default = lists.initialize()
+        lists.rename(default.id, "General")
+        val custom = lists.create("Work")
+        val channel = Channel<List<Task>>(Channel.UNLIMITED)
+        val collector = launch(Dispatchers.IO) { tasks.viewCandidates().collect { channel.send(it) } }
+        try {
+            awaitRows(channel) { it.isEmpty() }
+            val today = LocalDate.of(2026, 10, 12)
+            val unfinished = tasks.create(TaskContent("Unfinished", scheduledDate = today))
+            val completed = tasks.create(TaskContent("Completed", listId = custom.id, scheduledDate = today))
+            tasks.setCompletion(completed.id, Instant.parse("2026-10-12T07:00:00Z"), today)
+            val history = tasks.create(TaskContent("History", scheduledDate = today))
+            tasks.setCompletion(history.id, Instant.parse("2026-10-11T07:00:00Z"), today.minusDays(1))
+            awaitRows(channel) { it.size == 3 && it.count { row -> row.completedAt != null } == 2 }
+            val all = tasks.viewCandidates().first()
+            val views = TaskViews(Clock.fixed(Instant.parse("2026-10-12T12:00:00Z"), ZoneId.of("UTC")))
+            assertEquals(setOf(unfinished.id, completed.id), views.today(all).map { it.id }.toSet())
+            assertEquals(listOf(unfinished.id), views.inList(all, default.id).map { it.id })
+            assertEquals(3, all.size); assertEquals(history.id, tasks.read(history.id).id)
+            val additional = tasks.create(TaskContent("Additional"))
+            awaitRows(channel) { it.any { row -> row.id == additional.id } }
+        } finally { collector.cancelAndJoin(); channel.close() }
     }
 
     @Test

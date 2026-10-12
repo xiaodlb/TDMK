@@ -50,6 +50,7 @@ internal interface TaskDao {
     @Query("SELECT * FROM tasks WHERE id = :id") fun find(id: String): Task?
     @Query("SELECT * FROM tasks WHERE completedAt IS NULL ORDER BY id") fun active(): Flow<List<Task>>
     @Query("SELECT * FROM tasks WHERE completedAt IS NOT NULL ORDER BY id") fun completed(): Flow<List<Task>>
+    @Query("SELECT * FROM tasks ORDER BY id") fun viewCandidates(): Flow<List<Task>>
     @Query("DELETE FROM tasks WHERE id = :id") fun delete(id: String)
     @Query("DELETE FROM tasks WHERE listId = :listId") fun deleteForList(listId: String)
 }
