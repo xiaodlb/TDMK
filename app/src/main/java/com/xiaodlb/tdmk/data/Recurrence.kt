@@ -46,6 +46,7 @@ object SlotProvenance {
 
 @Dao
 internal interface RecurrenceDao {
+    @Query("SELECT id FROM templates ORDER BY id") fun ids(): List<String>
     @Insert fun insert(template: RecurrenceTemplate)
     @Update fun update(template: RecurrenceTemplate)
     @Query("SELECT * FROM templates WHERE id = :id") fun find(id: String): RecurrenceTemplate?

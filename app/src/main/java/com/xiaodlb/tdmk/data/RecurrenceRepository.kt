@@ -53,13 +53,16 @@ class RecurrenceRepository internal constructor(private val database: TdmkDataba
     }
 
     /** Commit supplied due slots and cursor together. Reservations are skipped; duplicate input is invalid. */
-    fun writeKnownBatch(id: String, revisionNumber: Int, slots: List<LocalDate>, through: LocalDate): List<Task> = transaction {
+    fun writeKnownBatch(id: String, revisionNumber: Int, slots: List<LocalDate>, through: LocalDate): List<Task> =
+        writeBatch(id, revisionNumber, slots, through, today())
+
+    private fun writeBatch(id: String, revisionNumber: Int, slots: List<LocalDate>, through: LocalDate, dueDay: LocalDate): List<Task> = transaction {
         val series = read(id)
         require(series.template.enabled) { "Disabled series cannot write a batch" }
         val source = series.revisions.singleOrNull { it.revision.number == revisionNumber }
             ?: throw IllegalArgumentException("Unknown source revision")
         val revision = source.revision
-        require(through.year in 1..9999 && through <= today() && through >= revision.effectiveFrom &&
+        require(through.year in 1..9999 && through <= dueDay && through >= revision.effectiveFrom &&
             (revision.effectiveUntil == null || through < revision.effectiveUntil)) { "Batch cursor outside due interval" }
         require(revision.reconciledThrough == null || through >= revision.reconciledThrough) { "Cursor cannot move backward" }
         require(slots.distinct().size == slots.size) { "Duplicate batch slots" }
@@ -78,6 +81,45 @@ class RecurrenceRepository internal constructor(private val database: TdmkDataba
         }
         dao.updateRevision(revision.copy(reconciledThrough = through))
         created
+    }
+
+    /** Reconcile all stored series through one captured local day; removed/disabled series are skipped. */
+    fun reconcile(): Int {
+        val day = today()
+        val ids = transaction { dao.ids() }
+        return ids.fold(0) { total, id -> Math.addExact(total, reconcileSeries(id, day)) }
+    }
+
+    /** Returns newly created occurrences, after fully processing the due range (not a partial page). */
+    fun reconcile(id: String): Int = reconcileSeries(id, today())
+
+    private fun reconcileSeries(id: String, day: LocalDate): Int {
+        require(day.year in 1..9999) { "Due day outside years 0001–9999" }
+        var created = 0
+        while (true) {
+            // Re-read boundaries/cursor under the same transaction as the write. Concurrent replay,
+            // edits, disabling and deletion cannot commit stale progress or resurrect removed rows.
+            val batch = transaction {
+                if (dao.find(id) == null) return@transaction null
+                val series = read(id)
+                if (!series.template.enabled) return@transaction null
+                for (source in series.revisions) {
+                    val revision = source.revision
+                    val end = minOf(day, revision.effectiveUntil?.minusDays(1) ?: day)
+                    val cursor = revision.reconciledThrough
+                    if (revision.effectiveFrom > end || (cursor != null && cursor >= end)) continue
+                    val from = cursor?.plusDays(1) ?: revision.effectiveFrom
+                    // Bound one transaction's work, but keep looping until every retained interval
+                    // is processed. Nonslot dates advance the cursor too, including before an anchor.
+                    val through = minOf(from.plusDays(365), end)
+                    val slots = RecurrenceCalendar.slots(revision.anchorDate, revision.frequency, from, through)
+                    return@transaction writeBatch(id, revision.number, slots, through, day).size
+                }
+                null
+            } ?: break
+            created = Math.addExact(created, batch)
+        }
+        return created
     }
 
     fun edit(id: String, spec: RecurrenceSpec): Recurrence = transaction {
