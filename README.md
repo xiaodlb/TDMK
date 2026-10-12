@@ -1,6 +1,6 @@
 # TDMK
 
-Personal Android task planner, built with Kotlin, Jetpack Compose, Material 3, and Room. The current foundation has an empty launch screen, versioned on-disk Settings storage, one local JUnit test, and targeted database device tests. Task/note features follow in later issues.
+Personal Android task planner, built with Kotlin, Jetpack Compose, Material 3, and Room. The current foundation has an empty launch screen, versioned on-disk Settings and list storage, one local JUnit test, and database/list migration device tests. Task/note features follow in later issues.
 
 ## Requirements
 
@@ -26,7 +26,7 @@ Run from the repository root:
 ```powershell
 .\gradlew.bat :app:testDebugUnitTest
 .\gradlew.bat :app:assembleDebug
-.\gradlew.bat :app:connectedDebugAndroidTest "-Pandroid.testInstrumentationRunnerArguments.class=com.xiaodlb.tdmk.data.DatabaseFoundationTest"
+.\gradlew.bat :app:connectedDebugAndroidTest
 ```
 
 Run just the launcher configuration test:
@@ -50,6 +50,7 @@ To run on your Android phone, enable USB debugging, connect and authorize the co
 - [Task 1 acceptance and validation](_docs/task-1-validation.md)
 - [Room foundation and migrations](_docs/storage-foundation.md)
 - [Task 5 build and device validation](_docs/task-5-validation.md)
+- [Task 6 list storage and migration validation](_docs/task-6-validation.md)
 
 Python tooling is not set up; `uv` commands are not needed to build or test this Android application.
 
