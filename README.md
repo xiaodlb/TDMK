@@ -1,6 +1,6 @@
 # TDMK
 
-Personal Android task planner, built with Kotlin, Jetpack Compose, and Material 3. This first milestone is an empty launch screen and one local JUnit test; task features and Room storage belong to later issues.
+Personal Android task planner, built with Kotlin, Jetpack Compose, Material 3, and Room. The current foundation has an empty launch screen, versioned on-disk Settings storage, one local JUnit test, and targeted database device tests. Task/note features follow in later issues.
 
 ## Requirements
 
@@ -26,6 +26,7 @@ Run from the repository root:
 ```powershell
 .\gradlew.bat :app:testDebugUnitTest
 .\gradlew.bat :app:assembleDebug
+.\gradlew.bat :app:connectedDebugAndroidTest "-Pandroid.testInstrumentationRunnerArguments.class=com.xiaodlb.tdmk.data.DatabaseFoundationTest"
 ```
 
 Run just the launcher configuration test:
@@ -36,6 +37,8 @@ Run just the launcher configuration test:
 
 The local test checks that the manifest exposes exactly one exported launcher activity. It does not require a phone and does not verify visual rendering. Test results are in `app/build/reports/tests/testDebugUnitTest/index.html`; the debug APK is `app/build/outputs/apk/debug/app-debug.apk`.
 
+The database tests require a connected authorized device/emulator (API 36 is the issue #5 validation target). Select it with `ANDROID_SERIAL` when needed. They exercise actual disk persistence, Application singleton concurrency, transaction rollback and failed-open data preservation; reports are in `app/build/reports/androidTests/connected/debug/index.html`. First execution needs internet to download Android test tooling. Generated schemas in `app/schemas/` are tracked; build/test outputs stay ignored. See the [storage policy](_docs/storage-foundation.md) and [recorded device checks](_docs/task-5-validation.md).
+
 To run on your Android phone, enable USB debugging, connect and authorize the computer, select the phone in Android Studio, and run the `app` configuration. Alternatively, use `adb install -r app/build/outputs/apk/debug/app-debug.apk` and open TDMK on the phone; this milestone should display an empty screen.
 
 ## Project guidance
@@ -45,6 +48,8 @@ To run on your Android phone, enable USB debugging, connect and authorize the co
 - [Work process](_docs/process.md)
 - [Issue backlog](_docs/tasks.md)
 - [Task 1 acceptance and validation](_docs/task-1-validation.md)
+- [Room foundation and migrations](_docs/storage-foundation.md)
+- [Task 5 build and device validation](_docs/task-5-validation.md)
 
 Python tooling is not set up; `uv` commands are not needed to build or test this Android application.
 

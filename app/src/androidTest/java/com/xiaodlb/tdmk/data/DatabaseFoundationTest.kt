@@ -119,7 +119,7 @@ class DatabaseFoundationTest {
         val name = fixtureName()
         createIncompatibleFixture(name, 1)
         val failure = assertThrows(IllegalStateException::class.java) { provider(name).getDatabase() }
-        assertTrue(failure.message.orEmpty(), failure.message.orEmpty().contains("Invalid schema"))
+        assertTrue(failure.message.orEmpty(), failure.message.orEmpty().contains("invalid schema", ignoreCase = true))
         assertFixtureUnchanged(name, 1)
     }
 
