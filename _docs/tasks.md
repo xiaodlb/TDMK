@@ -45,3 +45,7 @@ Follow [the work process](process.md): work on one GitHub issue at a time, read 
 - Task 37: [Review accessibility and small-screen usability](https://github.com/xiaodlb/TDMK/issues/37)
 - Task 38: [Run the first-version acceptance walkthrough](https://github.com/xiaodlb/TDMK/issues/38)
 - Task 39: [Document local builds and prepare a reviewable APK](https://github.com/xiaodlb/TDMK/issues/39)
+
+## Deferred follow-ups
+
+- [#40: Define optional cloud sync contract (post-v1)](https://github.com/xiaodlb/TDMK/issues/40) - created while grooming #4; not part of the offline first version.
