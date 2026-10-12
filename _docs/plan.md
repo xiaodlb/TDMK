@@ -99,6 +99,7 @@ Settings open from Home.
 - Use scrollable tabs above the task content.
 - Tab order: Today, Upcoming, Anytime, Inbox, then custom lists.
 - Today, Upcoming, and Anytime are date-based views across lists.
+- Upcoming includes scheduled dates from tomorrow through today + 7 local calendar days, inclusive; Home's upcoming section still ends on Sunday.
 - Custom list tabs display the tasks belonging to each list.
 - Include a search field for Tasks content.
 - Place Manage lists at the end of the tabs.
@@ -143,7 +144,7 @@ Deferred: accounts and optional cloud sync.
 
 ## Details still to decide
 
-- The date range and presentation of the dedicated Upcoming task tab.
+- The presentation of the dedicated Upcoming task tab.
 - How many recent notes appear on Home and how note cards are ordered.
 - Whether completing a parent task automatically completes its subtasks.
 - Editing and deleting one recurring occurrence versus the whole series.
