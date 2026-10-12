@@ -88,5 +88,5 @@ The following user-provided instructions apply if Python tooling is introduced. 
 - Keep generated builds, SDK paths, signing keys, credentials, and local configuration out of version control. Add appropriate ignore rules when the project is initialized.
 - Do not silently replace a missing prerequisite, unresolved product decision, or unavailable SDK with a different feature or stack.
 - Keep user-facing explanations short and concrete. State what changed, how it was verified, and anything still blocked.
-- Commit regularly at meaningful checkpoints as required by `_docs/process.md`. Push changes, manage issues, or publish releases when requested or authorized by the current task; local commits do not imply permission to publish.
+- Commit regularly and, after each work session that changes project files, commit and push the current working branch to GitHub as required by `_docs/process.md`. The user has given standing authorization for routine commits and pushes. Manage issues or publish releases when requested or authorized by the current task; a routine push does not authorize merging or releasing.
 - Do not start parallel agents unless the user explicitly requests delegation or parallel work.

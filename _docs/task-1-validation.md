@@ -38,4 +38,4 @@ The build emitted non-fatal SDK XML-version and native-symbol-stripping warnings
 
 ## Remaining verification
 
-`adb devices` reported no connected device. Installation and visual launch testing on a phone or emulator have not been performed; follow the README to verify the empty launch screen. Issue 1 remains open, and the implementation commits remain local pending publication/review.
+`adb devices` reported no connected device. Installation and visual launch testing on a phone or emulator have not been performed; follow the README to verify the empty launch screen. Issue 1 remains open. The implementation is committed on `codex/task-1-android-setup`; commits are pushed to GitHub according to `_docs/process.md`.
