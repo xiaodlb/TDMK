@@ -36,7 +36,7 @@ The testing and design guides are planned files and may not exist yet. If a refe
 - Use a minimal neutral design, light/dark themes, system-following appearance, and a manual override.
 - List deletion deletes its tasks after confirmation.
 
-Consult `_docs/plan.md` for the full scope and outstanding decisions. Resolve decisions that block the current task with the owner, one question at a time, and record the answers in the relevant documentation.
+Consult `_docs/plan.md` for the full scope and outstanding decisions. On 2026-10-12 the owner said "2, after that do all with yourself", explicitly selecting Inbox rename while retaining its default-list role and delegating remaining routine product decisions and backlog work. Decide those policies autonomously within the settled scope, record a rule and concrete example before implementation, and distinguish explicit owner selections from choices made under this delegation. Do not ask again for routine preferences. This authorization preserves the PM/Engineer/QA lifecycle and does not authorize production services, store releases, or changing settled scope.
 
 ## Implementation approach
 
