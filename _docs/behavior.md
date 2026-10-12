@@ -25,7 +25,6 @@ These rules were approved by the owner during the scope discussion and are recor
 
 Ask the owner one question at a time and replace each pending entry with an approved rule and a before/after example. Issue #2 remains incomplete until all required answers are recorded.
 
-- Ordering among tasks with the same priority.
 - Dedicated Upcoming date range, distinct from Home's end-of-week section.
 - Parent completion and subtask behavior.
 - Task reopening and its date/checklist behavior.

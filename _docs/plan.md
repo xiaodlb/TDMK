@@ -143,7 +143,6 @@ Deferred: accounts and optional cloud sync.
 
 ## Details still to decide
 
-- Ordering among tasks with equal priority.
 - The date range and presentation of the dedicated Upcoming task tab.
 - How many recent notes appear on Home and how note cards are ordered.
 - Whether completing a parent task automatically completes its subtasks.
