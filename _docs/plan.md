@@ -20,6 +20,7 @@ This document records the decisions made during the project brainstorming sessio
 - Tasks without a date appear in their own list and in an Anytime view.
 - Tasks sort by priority: High, Medium, then Low.
 - Priority levels are Low, Medium, and High.
+- New tasks default to Medium priority unless the user selects another priority.
 - A task added while viewing a list defaults to that list. Tasks added elsewhere default to Inbox.
 
 ### Task details
@@ -141,7 +142,7 @@ Deferred: accounts and optional cloud sync.
 
 ## Details still to decide
 
-- Default priority and ordering among tasks with equal priority.
+- Ordering among tasks with equal priority.
 - The date range and presentation of the dedicated Upcoming task tab.
 - How many recent notes appear on Home and how note cards are ordered.
 - Whether completing a parent task automatically completes its subtasks.
