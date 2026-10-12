@@ -47,3 +47,9 @@ To run on your Android phone, enable USB debugging, connect and authorize the co
 - [Task 1 acceptance and validation](_docs/task-1-validation.md)
 
 Python tooling is not set up; `uv` commands are not needed to build or test this Android application.
+
+## Toolchain references
+
+- [AGP 9.0 compatibility and built-in Kotlin](https://developer.android.com/build/releases/agp-9-0-0-release-notes)
+- [Compose compiler setup](https://developer.android.com/develop/ui/compose/compiler)
+- [Compose dependency BOM](https://developer.android.com/develop/ui/compose/bom)

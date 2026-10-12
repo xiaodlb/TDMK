@@ -53,9 +53,9 @@ Consult `_docs/plan.md` for the full scope and outstanding decisions. Resolve de
 
 ## Validation
 
-The repository initially contains documentation only. Backlog task 1 establishes the Android project, Gradle wrapper, and a passing local unit test. After setup, document the actual build and test commands in the README; do not assume these commands work before the wrapper and modules exist.
+The repository now contains the minimal Android project, Gradle wrapper, and a passing local unit test from backlog task 1. Read `README.md` for SDK/JDK prerequisites and actual build/test commands, and `_docs/task-1-validation.md` for recorded results and device-testing limitations. Keep setup instructions accurate when build configuration changes.
 
-For a standard `app` module, expected Windows commands are:
+For the existing `app` module, Windows commands are:
 
 ```powershell
 .\gradlew.bat :app:testDebugUnitTest
