@@ -7,6 +7,22 @@ import java.time.temporal.TemporalAdjusters
 
 /** Pure date/list results. Supply all stored candidates, including captured completed records. */
 class TaskViews(private val clock: Clock) {
+    data class CompletionGroup(val day: LocalDate, val tasks: List<Task>)
+
+    /** Home retains eligible completed formerly-overdue records; overdue() stays unfinished-only. */
+    fun homeOverdueAndToday(tasks: List<Task>): List<Task> {
+        val date = LocalDate.now(clock)
+        return select(tasks, date) { it.scheduledDate != null && it.scheduledDate <= date }
+    }
+
+    fun history(tasks: List<Task>): List<CompletionGroup> {
+        val date = LocalDate.now(clock)
+        return tasks.filter { it.completedAt != null && requireNotNull(it.completionDate) < date }
+            .groupBy { requireNotNull(it.completionDate) }
+            .entries.sortedByDescending { it.key }
+            .map { CompletionGroup(it.key, it.value.sortedWith(ordering)) }
+    }
+
     fun today(tasks: List<Task>): List<Task> {
         val date = LocalDate.now(clock)
         return select(tasks, date) { it.scheduledDate == date }

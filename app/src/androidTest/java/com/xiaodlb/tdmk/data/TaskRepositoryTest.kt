@@ -113,6 +113,72 @@ class TaskRepositoryTest {
     }
 
     @Test
+    fun completionRepeatReopenRecompleteAndCandidateVisibilityPersist(): Unit = runBlocking {
+        val day = LocalDate.of(2026, 10, 12)
+        var deviceZone = ZoneId.of("Asia/Qyzylorda")
+        val before = day.atTime(23, 59, 30).atZone(deviceZone).toInstant()
+        val after = day.plusDays(1).atTime(0, 0, 30).atZone(deviceZone).toInstant()
+        var clock = before.toEpochMilli()
+        val database = provider.getDatabase()
+        val tasks = TaskRepository(database, { clock }, { deviceZone })
+        val children = provider.getSubtaskRepository()
+        val channel = Channel<List<Task>>(Channel.UNLIMITED)
+        val collector = launch(Dispatchers.IO) { tasks.viewCandidates().collect { channel.send(it) } }
+        var saved: Task? = null
+        var savedChildren = emptyList<Subtask>()
+        try {
+            awaitRows(channel) { it.isEmpty() }
+            val parent = tasks.create(TaskContent("Complete", scheduledDate = day.minusDays(1), reminderTime = LocalTime.of(9, 5)))
+            val child = children.create(parent.id, "Checklist")
+            assertThrows(IllegalArgumentException::class.java) { tasks.complete(parent.id) }
+            assertThrows(IllegalArgumentException::class.java) { tasks.setCompletion(parent.id, before, day) }
+            assertEquals(parent, tasks.read(parent.id)); assertFalse(children.read(child.id).isCompleted)
+            children.setChecked(child.id, true)
+            savedChildren = children.readForParent(parent.id)
+            val sql = database.openHelper.writableDatabase
+            sql.execSQL("CREATE TRIGGER fail_completion BEFORE UPDATE ON tasks WHEN NEW.id = '${parent.id}' AND NEW.completedAt IS NOT NULL BEGIN SELECT RAISE(ABORT, 'injected completion failure'); END")
+            assertThrows(android.database.sqlite.SQLiteException::class.java) { tasks.complete(parent.id) }
+            assertEquals(parent, tasks.read(parent.id)); assertEquals(savedChildren, children.readForParent(parent.id))
+            sql.execSQL("DROP TRIGGER fail_completion")
+            val first = tasks.complete(parent.id)
+            assertEquals(before, first.completedAt); assertEquals(day, first.completionDate)
+            awaitRows(channel) { it.singleOrNull()?.completedAt == before }
+            clock = after.toEpochMilli()
+            assertEquals(first, tasks.complete(parent.id)) // Repeat after midnight retains pair AND timestamp.
+            val nextDay = TaskViews(Clock.fixed(after, deviceZone))
+            assertEquals(listOf(first), nextDay.history(tasks.viewCandidates().first()).single().tasks)
+            val unfinished = tasks.reopen(parent.id)
+            assertNull(unfinished.completedAt); assertNull(unfinished.completionDate)
+            assertEquals(parent.id, unfinished.id); assertEquals(parent.scheduledDate, unfinished.scheduledDate)
+            assertEquals(parent.reminderTime, unfinished.reminderTime); assertEquals(savedChildren, children.readForParent(parent.id))
+            awaitRows(channel) { it.singleOrNull()?.completedAt == null }
+            val candidates = tasks.viewCandidates().first()
+            assertTrue(nextDay.history(candidates).isEmpty()); assertEquals(listOf(unfinished), nextDay.overdue(candidates))
+            assertEquals(listOf(unfinished), nextDay.inList(candidates, parent.listId))
+            val again = tasks.complete(parent.id)
+            assertEquals(parent.id, again.id); assertEquals(after, again.completedAt); assertEquals(day.plusDays(1), again.completionDate)
+            awaitRows(channel) { it.singleOrNull()?.completedAt == after }
+            val completedCandidates = tasks.viewCandidates().first()
+            assertEquals(1, completedCandidates.size); assertTrue(nextDay.history(completedCandidates).isEmpty())
+            assertEquals(listOf(again), nextDay.homeOverdueAndToday(completedCandidates)); assertTrue(nextDay.overdue(completedCandidates).isEmpty())
+            deviceZone = ZoneId.of("Etc/GMT+12")
+            assertEquals(again, tasks.complete(parent.id)); assertEquals(again, tasks.read(parent.id))
+            assertTrue(TaskViews(Clock.fixed(after, deviceZone)).history(completedCandidates).isEmpty())
+            saved = again
+        } finally { collector.cancelAndJoin(); channel.close() }
+        provider.close()
+        val persisted = provider.getTaskRepository().read(saved!!.id)
+        assertEquals(saved, persisted); assertEquals(savedChildren, provider.getSubtaskRepository().readForParent(persisted.id))
+        val restartedCandidates = provider.getTaskRepository().viewCandidates().first()
+        assertEquals(1, restartedCandidates.size)
+        val later = TaskViews(Clock.fixed(day.plusDays(2).atStartOfDay(ZoneId.of("Asia/Qyzylorda")).toInstant(), ZoneId.of("Asia/Qyzylorda")))
+        assertEquals(listOf(persisted), later.history(restartedCandidates).single().tasks)
+        assertEquals(5, provider.getDatabase().openHelper.readableDatabase.version)
+        provider.getTaskRepository().delete(persisted.id)
+        assertTrue(later.history(provider.getTaskRepository().viewCandidates().first()).isEmpty())
+    }
+
+    @Test
     fun viewCandidatesKeepSameDayCompletionsAndEmitNewStoredRecords(): Unit = runBlocking {
         val tasks = provider.getTaskRepository()
         val lists = provider.getListRepository()
