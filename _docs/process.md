@@ -1,3 +1,9 @@
-- Tasks are GitHub issues, one at a time
-- Read the acceptance criteria before starting and before closing
-- Commit regularly
+# Work process
+
+- Tasks are GitHub issues, one at a time. Use [the backlog index](tasks.md) to find the issue and its prerequisites; finish or resolve the current issue before starting another.
+- Read the acceptance criteria before starting and before closing. Also read the goal, description, and relevant project guidance. If the issue has no explicit acceptance criteria, establish checkable criteria from its goal and description before implementation; clarify ambiguous requirements with the owner.
+- Commit regularly at meaningful checkpoints with clear messages. Keep unrelated changes out of the task's commits and preserve existing work.
+
+Before closing an issue, compare the result with every acceptance criterion, run the applicable checks, and record the results and any limitations. Leave the issue open if required criteria remain unmet. Follow the current task's authorization for issue updates and pushing commits.
+
+Keep supporting guidance in `_docs/` and reference it from `AGENTS.md`. Read testing guidelines before writing tests and design-system guidance before UI changes when those documents exist; do not invent missing guidance or treat planned documents as completed.

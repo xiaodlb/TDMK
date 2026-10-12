@@ -6,7 +6,7 @@ TDMK is a personal Android task planner with separate notes. The agreed stack is
 
 - Read `_docs/plan.md` before changing product behavior.
 - `_docs/tasks.md` maps the implementation backlog to GitHub issues in https://github.com/xiaodlb/TDMK.
-- When implementing an issue, read its goal, description, and prerequisites. Numbered task references use the original backlog numbers.
+- Work on one GitHub issue at a time, following `_docs/process.md`. Read its acceptance criteria, goal, description, and prerequisites before starting, and re-read the acceptance criteria before closing. Numbered task references use the original backlog numbers.
 - Read `_docs/behavior.md` and `_docs/data-model.md` when present. These files are planned deliverables and may not exist yet.
 - Current user instructions take precedence over this file. Do not treat an undecided detail as an agreed requirement.
 
@@ -14,9 +14,9 @@ TDMK is a personal Android task planner with separate notes. The agreed stack is
 
 Keep project guidance together in `_docs/` and add references here when new guidance is created.
 
-- `_docs/process.md` - how work is organized. Read before starting work.
-- Before writing tests, read `_docs/testing-guidelines.md`.
-- For anything touching the UI, read `_docs/design-system.md`.
+- [`_docs/process.md`](_docs/process.md) - how work is organized. Read before starting work.
+- Before writing tests, read `_docs/testing-guidelines.md` when present.
+- For anything touching the UI, read `_docs/design-system.md` when present.
 
 The testing and design guides are planned files and may not exist yet. If a referenced guide is missing, report that briefly and use the existing scope and development instructions; do not claim to have read it. If `_docs/api.md` is introduced, link it here as the API contract; no cloud API is included in the current first-version scope.
 
@@ -88,5 +88,5 @@ The following user-provided instructions apply if Python tooling is introduced. 
 - Keep generated builds, SDK paths, signing keys, credentials, and local configuration out of version control. Add appropriate ignore rules when the project is initialized.
 - Do not silently replace a missing prerequisite, unresolved product decision, or unavailable SDK with a different feature or stack.
 - Keep user-facing explanations short and concrete. State what changed, how it was verified, and anything still blocked.
-- Create commits, push changes, manage issues, or publish releases when requested or authorized by the current task; do not assume every local edit requires publication.
+- Commit regularly at meaningful checkpoints as required by `_docs/process.md`. Push changes, manage issues, or publish releases when requested or authorized by the current task; local commits do not imply permission to publish.
 - Do not start parallel agents unless the user explicitly requests delegation or parallel work.
