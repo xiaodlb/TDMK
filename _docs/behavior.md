@@ -18,7 +18,8 @@ These rules were approved by the owner during the scope discussion and are recor
 | Dedicated Upcoming range | The Tasks Upcoming tab includes scheduled dates from tomorrow through today + 7 local calendar days, inclusive. Home's upcoming section still ends on Sunday. | Before: on local Monday 2026-10-12, tasks are dated October 12, 13, 18, 19, and 20. After: Upcoming includes October 13, 18, and 19; October 12 is Today and October 20 is outside the range. Home's upcoming section ends October 18. |
 | Recurrence | Daily, weekly, or monthly; a new occurrence is created on schedule even if its predecessor is unfinished. | A daily task can have yesterday's overdue occurrence and today's occurrence. |
 | Reminders | Individually selected time on the task's scheduled day; a date is required. Priority remains independent. | A High task has no reminder unless the user explicitly sets one. |
-| Task notes and subtasks | Tasks can have an optional short note and individually checkable subtasks. | Checking one subtask stores its own completion state. Parent-completion policy is pending below. |
+| Task notes and subtasks | Tasks can have an optional short note and individually checkable subtasks. | Checking one subtask stores its own completion state. |
+| Parent completion | A parent task can be completed only after all its subtasks are completed. Attempting parent completion does not automatically complete unfinished subtasks. | Before: a parent has one checked and one unchecked subtask. After attempting parent completion: the parent remains unfinished and the subtask states stay unchanged. Once the remaining subtask is checked, the parent can be completed. |
 | List defaults | Creation in a custom list uses that list; elsewhere it uses Inbox. | Quick entry in a date view adds the task to Inbox. |
 | List deletion | Delete a list and its tasks only after confirmation. | Canceling confirmation retains the list and its tasks. Inbox protections are pending below. |
 
@@ -26,8 +27,7 @@ These rules were approved by the owner during the scope discussion and are recor
 
 Ask the owner one question at a time and replace each pending entry with an approved rule and a before/after example. Issue #2 remains incomplete until all required answers are recorded.
 
-- Parent completion and subtask behavior.
-- Task reopening and its date/checklist behavior.
+- Task reopening and its date/checklist behavior, including unchecking a subtask after parent completion.
 - Inbox rename and delete protections.
 - Weekly/monthly anchors and missing monthly dates.
 - Editing one recurring occurrence versus the series, including completed occurrences.
@@ -45,3 +45,4 @@ Existing scope rules above: approved in the original owner scope discussion.
 - Default priority: Medium. Explicitly approved by the owner for issue #2 on 2026-10-12 by selecting option 1.
 - Equal-priority ordering: oldest created first. Explicitly approved by the owner for issue #2 on 2026-10-12 by selecting option 1.
 - Dedicated Upcoming range: tomorrow through today + 7 local calendar days, inclusive; Home remains through Sunday. Explicitly approved by the owner for issue #2 on 2026-10-12 by selecting option 1.
+- Parent completion: require all subtasks to be completed first. Explicitly approved by the owner for issue #2 on 2026-10-12 by selecting option 3. Reopening and unchecking subtasks after parent completion remain undecided.

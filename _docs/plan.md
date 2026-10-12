@@ -38,6 +38,7 @@ This document records the decisions made during the project brainstorming sessio
 ### Overdue and completed tasks
 
 - Unfinished tasks remain overdue until completed or rescheduled.
+- A parent task can be completed only after all its subtasks are completed; attempting parent completion does not automatically complete unfinished subtasks.
 - Completed tasks remain visible and crossed out for the rest of the completion day.
 - On the next day, completed tasks disappear from active views and move to the completion log.
 - The Log groups completed tasks by completion day, newest day first.
@@ -146,11 +147,10 @@ Deferred: accounts and optional cloud sync.
 
 - The presentation of the dedicated Upcoming task tab.
 - How many recent notes appear on Home and how note cards are ordered.
-- Whether completing a parent task automatically completes its subtasks.
 - Editing and deleting one recurring occurrence versus the whole series.
 - Monthly repetition when a month lacks the selected day.
 - Reminder behavior for overdue tasks, missed reminders, and changed scheduled dates.
-- Whether completed tasks can be reopened and how they return to active views.
+- Whether completed tasks can be reopened, their date/checklist behavior when reopened, and what happens if a subtask is unchecked after parent completion.
 - Whether the built-in Inbox can be renamed or deleted.
 - Deletion behavior for individual tasks and notes, including any undo or recovery.
 - Backup format, export destination, and restore behavior.
