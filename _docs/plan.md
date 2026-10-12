@@ -19,6 +19,7 @@ This document records the decisions made during the project brainstorming sessio
 - Scheduling uses dates only, with no task time slots or time blocks.
 - Tasks without a date appear in their own list and in an Anytime view.
 - Tasks sort by priority: High, Medium, then Low.
+- Tasks with equal priority sort oldest created first.
 - Priority levels are Low, Medium, and High.
 - New tasks default to Medium priority unless the user selects another priority.
 - A task added while viewing a list defaults to that list. Tasks added elsewhere default to Inbox.

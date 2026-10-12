@@ -11,6 +11,7 @@ These rules were approved by the owner during the scope discussion and are recor
 | Scheduling | A task has an optional date, without a task time slot or duration. | An undated task appears in its list and Anytime. |
 | Priority | High, Medium, Low; views sort in that order. | High-priority tasks appear before Medium-priority tasks. |
 | Default priority | Newly created tasks use Medium unless the user selects another priority. | Enter only a title: the saved task has Medium priority. |
+| Equal-priority ordering | Tasks with the same priority appear oldest created first. | Before: task B was created Tuesday and task A Monday, both Medium. After: the view shows A before B; a later High task still appears before both. |
 | Overdue | Unfinished tasks stay overdue until completed or rescheduled. | An unfinished Monday task remains overdue on Tuesday. |
 | Completion | Completed tasks remain crossed out for the completion day; on the next day they disappear from active views and appear in Log. | Complete on Monday: crossed out Monday, historical on Tuesday. |
 | Week | Weeks run Monday through Sunday; Home's upcoming section ends on Sunday. | On Friday, Home shows remaining upcoming dates through that Sunday. |
@@ -43,3 +44,4 @@ Ask the owner one question at a time and replace each pending entry with an appr
 Existing scope rules above: approved in the original owner scope discussion.
 
 - Default priority: Medium. Explicitly approved by the owner for issue #2 on 2026-10-12 by selecting option 1.
+- Equal-priority ordering: oldest created first. Explicitly approved by the owner for issue #2 on 2026-10-12 by selecting option 1.
