@@ -8,3 +8,7 @@
 Before closing an issue, compare the result with every acceptance criterion, run the applicable checks, and record the results and any limitations. Leave the issue open if required criteria remain unmet. Follow the current task's authorization for issue updates and pushing commits.
 
 Keep supporting guidance in `_docs/` and reference it from `AGENTS.md`. Read testing guidelines before writing tests and design-system guidance before UI changes when those documents exist; do not invent missing guidance or treat planned documents as completed.
+
+## Roles
+
+- PM - grooms a task before anyone implements it, follows `_docs/team/pm.md`
