@@ -21,6 +21,7 @@ These rules were approved by the owner during the scope discussion and are recor
 | Task notes and subtasks | Tasks can have an optional short note and individually checkable subtasks. | Checking one subtask stores its own completion state. |
 | Parent completion | A parent task can be completed only after all its subtasks are completed. Attempting parent completion does not automatically complete unfinished subtasks. | Before: a parent has one checked and one unchecked subtask. After attempting parent completion: the parent remains unfinished and the subtask states stay unchanged. Once the remaining subtask is checked, the parent can be completed. |
 | Task reopening | Completed tasks can be reopened. Reopening makes the task unfinished while preserving its scheduled date (or absence of a date) and every subtask's checked state. | Before: a task scheduled October 12 is completed, with both subtasks checked. After reopening on October 13: it is unfinished, still scheduled October 12, and both subtasks remain checked. As a consequence of the existing date filters, it returns to active views as overdue; an undated task instead returns to its list and Anytime. |
+| Unchecking after parent completion | Unchecking a subtask of a completed parent automatically reopens the parent. Keep the parent's scheduled date and all other subtask states; all subtasks must be checked before the parent can be completed again. | Before: a completed parent is scheduled October 12 and subtasks A and B are checked. After unchecking A on October 13: the parent is unfinished, remains scheduled October 12, A is unchecked, and B stays checked. The retained date makes the parent overdue; attempting completion again is blocked until A is checked. |
 | List defaults | Creation in a custom list uses that list; elsewhere it uses Inbox. | Quick entry in a date view adds the task to Inbox. |
 | List deletion | Delete a list and its tasks only after confirmation. | Canceling confirmation retains the list and its tasks. Inbox protections are pending below. |
 
@@ -28,7 +29,6 @@ These rules were approved by the owner during the scope discussion and are recor
 
 Ask the owner one question at a time and replace each pending entry with an approved rule and a before/after example. Issue #2 remains incomplete until all required answers are recorded.
 
-- Unchecking a subtask after parent completion.
 - Inbox rename and delete protections.
 - Weekly/monthly anchors and missing monthly dates.
 - Editing one recurring occurrence versus the series, including completed occurrences.
@@ -46,5 +46,6 @@ Existing scope rules above: approved in the original owner scope discussion.
 - Default priority: Medium. Explicitly approved by the owner for issue #2 on 2026-10-12 by selecting option 1.
 - Equal-priority ordering: oldest created first. Explicitly approved by the owner for issue #2 on 2026-10-12 by selecting option 1.
 - Dedicated Upcoming range: tomorrow through today + 7 local calendar days, inclusive; Home remains through Sunday. Explicitly approved by the owner for issue #2 on 2026-10-12 by selecting option 1.
-- Parent completion: require all subtasks to be completed first. Explicitly approved by the owner for issue #2 on 2026-10-12 by selecting option 3. Unchecking subtasks after parent completion remains undecided.
+- Parent completion: require all subtasks to be completed first. Explicitly approved by the owner for issue #2 on 2026-10-12 by selecting option 3.
 - Task reopening: allow reopening while keeping the scheduled date and subtask states. Explicitly approved by the owner for issue #2 on 2026-10-12 by selecting option 1. Recurrence history and occurrence/series editing semantics remain pending; this approval does not resolve them.
+- Unchecking after parent completion: automatically reopen the parent when a subtask is unchecked. Explicitly approved by the owner for issue #2 on 2026-10-12 by selecting option 2. Retained date, unchanged other subtask states, and the gate on completing again follow the previously approved rules; recurring-template and series effects remain pending.

@@ -43,6 +43,7 @@ This document records the decisions made during the project brainstorming sessio
 - On the next day, completed tasks disappear from active views and move to the completion log.
 - The Log groups completed tasks by completion day, newest day first.
 - Completed tasks can be reopened while preserving their scheduled date (or absence of a date) and subtask checked states. They return to active views according to the retained date.
+- Unchecking a subtask of a completed parent automatically reopens the parent, preserving its scheduled date and all other subtask states. All subtasks must be checked before the parent can be completed again.
 
 ### Repeating tasks
 
@@ -151,7 +152,6 @@ Deferred: accounts and optional cloud sync.
 - Editing and deleting one recurring occurrence versus the whole series.
 - Monthly repetition when a month lacks the selected day.
 - Reminder behavior for overdue tasks, missed reminders, and changed scheduled dates.
-- What happens if a subtask is unchecked after parent completion.
 - Whether the built-in Inbox can be renamed or deleted.
 - Deletion behavior for individual tasks and notes, including any undo or recovery.
 - Backup format, export destination, and restore behavior.
