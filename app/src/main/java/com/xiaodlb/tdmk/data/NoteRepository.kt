@@ -19,7 +19,7 @@ class NoteRepository internal constructor(private val database: TdmkDatabase, pr
         if (trimmed.isEmpty() && StoredText.trim(text).isEmpty()) null else {
             var id: String
             do { id = UUID.randomUUID().toString() } while (dao.find(id) != null || database.lists().find(id) != null ||
-                database.tasks().find(id) != null || database.subtasks().find(id) != null)
+                database.tasks().find(id) != null || database.subtasks().find(id) != null || database.recurrence().find(id) != null)
             val time = instant()
             NoteRow(id, trimmed.ifEmpty { "Untitled" }, RichBodyCodec.encode(rich), text, time, time)
                 .also { dao.insert(it) }.validated()

@@ -23,12 +23,14 @@ class DatabaseProvider(context: Context, private val filename: String = DATABASE
                 override fun onCreate(db: SupportSQLiteDatabase) {
                     db.execSQL("INSERT INTO settings (id, appearance) VALUES (1, 'system')")
                     ListSchema.installDefaultConstraints(db)
+                    RecurrenceSchema.installConstraints(db)
                 }
             })
             .addMigrations(ListSchema.migration1To2)
             .addMigrations(TaskSchema.migration2To3)
             .addMigrations(SubtaskSchema.migration3To4)
             .addMigrations(NoteSchema.migration4To5)
+            .addMigrations(RecurrenceSchema.migration5To6)
             // No destructive migration, downgrade or automatic file recovery is permitted.
             .build()
         try {
@@ -54,6 +56,8 @@ class DatabaseProvider(context: Context, private val filename: String = DATABASE
     fun getSubtaskRepository(): SubtaskRepository = SubtaskRepository(getDatabase())
     @WorkerThread
     fun getNoteRepository(): NoteRepository = NoteRepository(getDatabase())
+    @WorkerThread
+    fun getRecurrenceRepository(): RecurrenceRepository = RecurrenceRepository(getDatabase())
 
     /** Only for an owner shutting down all users of this provider, including device tests. */
     @Synchronized

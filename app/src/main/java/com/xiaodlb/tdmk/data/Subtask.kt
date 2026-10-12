@@ -23,4 +23,5 @@ internal interface SubtaskDao {
     @Query("UPDATE subtasks SET `order` = `order` + :offset WHERE taskId = :taskId") fun moveAside(taskId: String, offset: Long)
     @Query("UPDATE subtasks SET `order` = :order WHERE id = :id") fun move(id: String, order: Long)
     @Query("DELETE FROM subtasks WHERE id = :id") fun delete(id: String)
+    @Query("DELETE FROM subtasks WHERE taskId = :taskId") fun deleteForParent(taskId: String)
 }

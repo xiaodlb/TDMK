@@ -23,7 +23,7 @@ class TaskRepository internal constructor(
     fun create(content: TaskContent): Task = transaction {
         val valid = validate(content)
         var id: String
-        do { id = UUID.randomUUID().toString() } while (dao.find(id) != null || database.lists().find(id) != null || database.subtasks().find(id) != null || database.notes().find(id) != null)
+        do { id = UUID.randomUUID().toString() } while (dao.find(id) != null || database.lists().find(id) != null || database.subtasks().find(id) != null || database.notes().find(id) != null || database.recurrence().find(id) != null)
         val time = instant()
         Task(id, valid.listId!!, valid.title, valid.scheduledDate, valid.priority, valid.shortNote,
             valid.reminderTime, null, null, time, time).also { dao.insert(it) }
@@ -35,7 +35,7 @@ class TaskRepository internal constructor(
         val changed = previous.copy(listId = valid.listId!!, title = valid.title,
             scheduledDate = valid.scheduledDate, priority = valid.priority, shortNote = valid.shortNote,
             reminderTime = valid.reminderTime)
-        save(previous, changed)
+        save(previous, if (changed != previous && previous.seriesId != null) changed.copy(isOverride = true) else changed)
     }
 
     fun setScheduledDate(id: String, date: LocalDate?): Task = transaction {
@@ -60,10 +60,18 @@ class TaskRepository internal constructor(
         if (at != null) require(database.subtasks().unchecked(id) == 0) { "Complete all subtasks before their parent" }
         at?.let { validInstant(it) }
         day?.let { validDate(it) }
-        save(previous, previous.copy(completedAt = at, completionDate = day))
+        save(previous, previous.copy(completedAt = at, completionDate = day,
+            isOverride = previous.isOverride || (at == null && previous.completedAt != null && previous.seriesId != null)))
     }
 
-    fun delete(id: String) = transaction { read(id); dao.delete(id) }
+    fun delete(id: String) = transaction {
+        if (read(id).seriesId != null) RecurrenceRepository(database).deleteOccurrence(id) else dao.delete(id)
+    }
+
+    internal fun markChecklistOverride(id: String) {
+        val previous = read(id)
+        if (previous.seriesId != null && !previous.isOverride) save(previous, previous.copy(isOverride = true))
+    }
 
     private fun save(previous: Task, changed: Task): Task {
         if (previous == changed) return previous

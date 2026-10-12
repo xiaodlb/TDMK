@@ -58,7 +58,7 @@ class ListRepository internal constructor(
     fun delete(id: String): List<TaskList> = transaction {
         val target = find(id)
         require(!target.isDefault) { "The default list cannot be deleted, even after rename" }
-        database.tasks().deleteForList(id)
+        RecurrenceRepository(database).deleteOwnedAndReserveExternal(id)
         dao.delete(id)
         // Ascending compaction fills the vacated slot before moving the next surviving row.
         dao.all().filterNot { it.isDefault }.forEachIndexed { index, previous ->
@@ -73,7 +73,7 @@ class ListRepository internal constructor(
     private fun newList(name: String, isDefault: Boolean, order: Long): TaskList {
         val instant = time()
         var id: String
-        do { id = UUID.randomUUID().toString() } while (dao.find(id) != null || database.tasks().find(id) != null || database.subtasks().find(id) != null || database.notes().find(id) != null)
+        do { id = UUID.randomUUID().toString() } while (dao.find(id) != null || database.tasks().find(id) != null || database.subtasks().find(id) != null || database.notes().find(id) != null || database.recurrence().find(id) != null)
         return TaskList(id, name, isDefault, order, instant, instant)
     }
 
