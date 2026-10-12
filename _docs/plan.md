@@ -83,6 +83,8 @@ This document records the settled scope and later task-policy decisions. Explici
 - The Notes tab displays cards in a two-column grid with text previews.
 - Selecting a note opens a full-screen editor.
 - Task notes remain separate from this notes collection.
+- Cards sort by saved modification time descending, then creation time descending, then stable ID ascending; opening unchanged content does not reorder it. Home shows the three most recent saved notes.
+- Autosave after 500 ms idle and flush on leaving/backgrounding/export; report failures without silently discarding edits. Blank titles become Untitled when content exists; new entirely blank notes are discarded, existing notes cleared blank are retained as Untitled. Titles with empty bodies are allowed.
 
 ## Screens and navigation
 
@@ -141,6 +143,22 @@ Settings open from Home.
 - Each tab has its own search field, scoped to that tab's content.
 - Log search covers completed tasks.
 - The final navigation decision uses per-tab search fields rather than one global search screen.
+- Match literal substrings in human-readable title/body fields using Unicode normalization and default full case folding; preserve accents, and trim/collapse whitespace for matching. Blank queries restore the ordinary view; no matches show an empty-result message.
+- Home filters its ordinary task sections and three recent notes. Tasks searches active tasks across all lists/views, including completed today; Notes searches every saved separate note; Log searches historical completed tasks starting the next local day. Exact fields, examples, and exclusions are in [behavior.md](behavior.md).
+
+## Deletion and recovery
+
+- Confirm permanent deletion of individual tasks, subtasks, and notes; canceling changes no data or reminders. No in-app undo, trash, or recovery window.
+- Task deletion includes its subtasks/short note/completion record and cancels its reminder. Notes remain independent. Recurring occurrence/series and custom-list deletion preserve the existing task-policy confirmations, exclusions, and protected default-list rules.
+- A previous manual backup can restore only its full snapshot through replacement, not undo a single deletion.
+
+## Backup and restore
+
+- Export a version-1 portable UTF-8 JSON `.tdmk.json` snapshot through a user-selected Android document picker, with no account required. Local destinations work offline; selected external providers may have their own network requirements.
+- Include lists, tasks/subtasks and completion history, formatted notes, recurrence templates/slots/exceptions, reminder configuration/consumed state, and user appearance mode. Exclude OS permissions/alarms/timezone, provider grants, transient UI state/drafts/indexes, and deleted record content except required recurrence exclusions.
+- Restore validates the complete supported snapshot before explicit replacement confirmation; no merge. Unsupported, malformed, inconsistent, canceled, or failed pre-commit restores preserve current records/settings/schedules; replacement is atomic.
+- Preserve occurrence identities/exclusions and reconcile newly due slots without duplicates. Rebuild only future unconsumed reminders under current device permissions/timezone, retaining known consumed-attempt safety state and never replaying past alarms.
+- Backup limits are 50 MiB and 100,000 total entity records; export/provider failures are reported without changing app data or claiming a successful backup. Exact format/schema and implementation follow in later issues; [behavior.md](behavior.md) specifies examples, safety metadata, and realistic failure limitations.
 
 ## Visual style
 
@@ -158,10 +176,6 @@ Deferred: accounts and optional cloud sync.
 ## Details still to decide
 
 - The presentation of the dedicated Upcoming task tab.
-- How many recent notes appear on Home and how note cards are ordered.
-- Deletion behavior for individual tasks and notes, including any undo or recovery.
-- Backup format, export destination, and restore behavior.
-- Exact search matching rules and Home search coverage.
 - Screen mockups and a walkthrough of the daily workflow.
 
-These remaining details are not additional agreed features. Resolve them in their own groomed issues under the owner's delegation; task-policy choices for issue #2 are fully recorded in [behavior.md](behavior.md).
+These remaining presentation/walkthrough details are not additional agreed features. Resolve them in their own groomed issues under the owner's delegation; task-policy choices for issue #2 and note/search/deletion/backup choices for issue #3 are fully recorded with decision sources in [behavior.md](behavior.md).
