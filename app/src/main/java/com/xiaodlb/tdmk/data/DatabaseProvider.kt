@@ -27,6 +27,7 @@ class DatabaseProvider(context: Context, private val filename: String = DATABASE
             })
             .addMigrations(ListSchema.migration1To2)
             .addMigrations(TaskSchema.migration2To3)
+            .addMigrations(SubtaskSchema.migration3To4)
             // No destructive migration, downgrade or automatic file recovery is permitted.
             .build()
         try {
@@ -48,6 +49,8 @@ class DatabaseProvider(context: Context, private val filename: String = DATABASE
     fun getListRepository(): ListRepository = ListRepository(getDatabase())
     @WorkerThread
     fun getTaskRepository(): TaskRepository = TaskRepository(getDatabase())
+    @WorkerThread
+    fun getSubtaskRepository(): SubtaskRepository = SubtaskRepository(getDatabase())
 
     /** Only for an owner shutting down all users of this provider, including device tests. */
     @Synchronized

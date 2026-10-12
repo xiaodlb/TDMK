@@ -193,6 +193,6 @@ class TaskRepositoryTest {
         assertEquals(task, provider.getTaskRepository().read(task.id))
         assertEquals(originalLists, provider.getListRepository().readAll())
         assertEquals(Settings(1, Appearance.DARK), provider.getDatabase().settings().read())
-        assertEquals(3, provider.getDatabase().openHelper.readableDatabase.version)
+        assertEquals(4, provider.getDatabase().openHelper.readableDatabase.version)
     }
 }

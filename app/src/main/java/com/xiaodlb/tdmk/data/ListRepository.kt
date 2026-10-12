@@ -73,7 +73,7 @@ class ListRepository internal constructor(
     private fun newList(name: String, isDefault: Boolean, order: Long): TaskList {
         val instant = time()
         var id: String
-        do { id = UUID.randomUUID().toString() } while (dao.find(id) != null || database.tasks().find(id) != null)
+        do { id = UUID.randomUUID().toString() } while (dao.find(id) != null || database.tasks().find(id) != null || database.subtasks().find(id) != null)
         return TaskList(id, name, isDefault, order, instant, instant)
     }
 

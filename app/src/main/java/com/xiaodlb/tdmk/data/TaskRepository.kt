@@ -21,7 +21,7 @@ class TaskRepository internal constructor(
     fun create(content: TaskContent): Task = transaction {
         val valid = validate(content)
         var id: String
-        do { id = UUID.randomUUID().toString() } while (dao.find(id) != null || database.lists().find(id) != null)
+        do { id = UUID.randomUUID().toString() } while (dao.find(id) != null || database.lists().find(id) != null || database.subtasks().find(id) != null)
         val time = instant()
         Task(id, valid.listId!!, valid.title, valid.scheduledDate, valid.priority, valid.shortNote,
             valid.reminderTime, null, null, time, time).also { dao.insert(it) }
@@ -43,6 +43,7 @@ class TaskRepository internal constructor(
 
     fun complete(id: String): Task = transaction {
         val previous = read(id)
+        require(database.subtasks().unchecked(id) == 0) { "Complete all subtasks before their parent" }
         if (previous.completedAt != null) previous else {
             val time = instant()
             setCompletion(id, time, time.atZone(zone()).toLocalDate())
@@ -54,6 +55,7 @@ class TaskRepository internal constructor(
     fun setCompletion(id: String, at: Instant?, day: LocalDate?): Task = transaction {
         val previous = read(id)
         require((at == null) == (day == null)) { "Completion instant and captured day must be paired" }
+        if (at != null) require(database.subtasks().unchecked(id) == 0) { "Complete all subtasks before their parent" }
         at?.let { validInstant(it) }
         day?.let { validDate(it) }
         save(previous, previous.copy(completedAt = at, completionDate = day))
