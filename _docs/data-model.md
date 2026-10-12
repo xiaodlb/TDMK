@@ -90,7 +90,7 @@ Template is one series root; revisions are a persisted JSON array in logical sto
 | Template.updatedAt | Instant | no | createdAt | content/revision/enable edits, not derived cursor progress |
 | Template.revisions | Revision array | no | required | nonempty, revision ascending |
 | Revision.number | Version | no | 1 initially, previous+1 on edit | contiguous 1..N; immutable identity within series |
-| Revision.effectiveFrom | Date | no | initial anchorDate; today on edit | inclusive boundary, nondecreasing (multiple edits today allowed) |
+| Revision.effectiveFrom | Date | no | initially min(anchorDate, creation local day); today on edit | inclusive boundary, nondecreasing (multiple edits today allowed); initial boundary <= anchorDate |
 | Revision.effectiveUntil | Date | yes | null | exclusive next revision.effectiveFrom; final revision null; equal boundaries mean empty superseded revision |
 | Revision.anchorDate | Date | no | required | first nominal due day; for schedule/start change must be today or later |
 | Revision.frequency | Text enum | no | required | daily / weekly / monthly only; interval always one |
@@ -106,6 +106,8 @@ Template is one series root; revisions are a persisted JSON array in logical sto
 | Exclusion.slotDate | Date | no | required | original slot validated against at least one retained revision, part of PK |
 
 Revision content excludes listId intentionally: template.listId is current owner; existing occurrences retain their own current list. A series move updates eligible today's unmodified tasks and uses the new list for future copies; past/completed/overridden tasks keep theirs. Revisions retain enough schedule provenance to validate old slots. On each edit append a revision and close the previous interval even for content-only changes; a content-only revision retains the original anchor/frequency. Never discard earlier revisions, including empty same-day ones. An occurrence/exclusion may reference a slot produced by an earlier revision even outside its now-shortened interval: that was a previously generated preserved identity. Validate its slot against that revision's recurrence rule and date >= anchor, not against the new cutoff. This permits today's completed slot to survive today's revision. Exclusions have no deleted title, list, short note, checklist or timestamp.
+
+Initial-boundary correction on 2026-10-13 under the owner's routine-decision delegation: capture the current local creation day and set the first effectiveFrom to the earlier of that day and anchorDate. This permits prospective edits before a future start without decreasing revision boundaries; anchorDate still forbids slots before the chosen start. Do not recompute the stored boundary from createdAt using a later device timezone. For a past anchor retain anchorDate so missed dates remain reconcilable. Example: create October 13 with October 20 anchor, then edit content October 14: first interval becomes [October 13, October 14), the next starts October 14 with anchor October 20, and no early slot exists. Change the schedule on October 14 to anchor October 14: the new interval can produce that day's slot. This corrects technical bookkeeping, not the settled owner policy; see the [Engineer conflict record](https://github.com/xiaodlb/TDMK/issues/12#issuecomment-6133534566).
 
 ## Calendar and lifecycle
 
