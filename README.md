@@ -56,6 +56,7 @@ To run on your Android phone, enable USB debugging, connect and authorize the co
 - [Task 8 checklist/completion/cascade checks](_docs/task-8-validation.md)
 - [Rich-note storage policy](_docs/note-storage.md)
 - [Task 9 codec/persistence/migration checks](_docs/task-9-validation.md)
+- [Task 10 date views and deterministic checks](_docs/task-10-validation.md)
 
 Python tooling is not set up; `uv` commands are not needed to build or test this Android application.
 
