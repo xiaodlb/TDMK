@@ -1,6 +1,6 @@
 # TDMK
 
-Personal Android task planner, built with Kotlin, Jetpack Compose, Material 3, and Room. The current foundation has an empty launch screen, versioned on-disk Settings/list/ordinary-task/checklist storage, one local JUnit test, and persistence/migration device tests. Screens and note features follow in later issues.
+Personal Android task planner, built with Kotlin, Jetpack Compose, Material 3, and Room. The current foundation has an empty launch screen, versioned on-disk Settings/list/ordinary-task/checklist/rich-note storage, local codec/launcher tests, and persistence/migration device tests. Screens follow in later issues.
 
 ## Requirements
 
@@ -54,6 +54,8 @@ To run on your Android phone, enable USB debugging, connect and authorize the co
 - [Ordinary-task storage policy](_docs/task-storage.md)
 - [Task 7 persistence/reactive/migration checks](_docs/task-7-validation.md)
 - [Task 8 checklist/completion/cascade checks](_docs/task-8-validation.md)
+- [Rich-note storage policy](_docs/note-storage.md)
+- [Task 9 codec/persistence/migration checks](_docs/task-9-validation.md)
 
 Python tooling is not set up; `uv` commands are not needed to build or test this Android application.
 
