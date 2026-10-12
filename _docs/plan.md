@@ -1,6 +1,6 @@
 # Personal Android Task Planner — Project Scope
 
-This document records the decisions made during the project brainstorming session. Open questions at the end have not yet been decided.
+This document records the settled scope and later task-policy decisions. Explicit owner answers and choices made under the owner's 2026-10-12 delegation are distinguished in [behavior.md](behavior.md). Remaining non-task details at the end belong to later issues and will be resolved under that delegation.
 
 ## Purpose and platform
 
@@ -23,6 +23,7 @@ This document records the decisions made during the project brainstorming sessio
 - Priority levels are Low, Medium, and High.
 - New tasks default to Medium priority unless the user selects another priority.
 - A task added while viewing a list defaults to that list. Tasks added elsewhere default to Inbox.
+- Inbox can be renamed while retaining its stable default-list identity; it cannot be deleted.
 
 ### Task details
 
@@ -50,6 +51,10 @@ This document records the decisions made during the project brainstorming sessio
 - Support simple daily, weekly, and monthly schedules.
 - Create each new occurrence on schedule, even when a previous occurrence remains unfinished.
 - Unfinished previous occurrences remain overdue.
+- Anchor recurrence to the start date: daily by local day, weekly by its weekday, monthly by its day number. Clamp missing monthly days to month end without changing the original anchor.
+- Reconcile all due missed dates through today exactly once, preserving completion and occurrence exceptions; each new occurrence starts with unchecked subtasks.
+- Single-occurrence edits, deletions, and reopening affect only that occurrence; deleted slots do not regenerate. Series edits apply prospectively from today, preserving completed history, past unfinished tasks, and overrides. Confirmed series deletion includes all occurrences and completed history.
+- See [behavior.md](behavior.md) for schedule revisions, disabling recurrence, slot identity, and precise before/after examples.
 
 ### Reminders
 
@@ -58,12 +63,16 @@ This document records the decisions made during the project brainstorming sessio
 - A task must have a scheduled date before a reminder can be added.
 - The reminder time is on the task's scheduled day.
 - Priority does not automatically choose reminder timing or trigger repeated alerts.
+- A reminder makes at most one notification attempt per configuration; past times and missed previous days do not replay or alert repeatedly on overdue tasks.
+- Date changes retain reminder time on the new date and cancel the old alarm; date removal clears the reminder. Completion/deletion cancels alarms; reopening only re-arms future unconsumed times.
+- Reminder times follow the current device timezone as local wall-clock times; clock changes recalculate future alarms without repeating consumed ones. DST gaps shift forward and overlaps use the earlier instant once.
+- Notification/channel denial preserves saved data and shows blocked status. Exact-alarm access denial uses an approximate inexact fallback with possible OS delays. Re-enable only future unconsumed reminders, without backlog alerts; device validation is required during implementation.
 
 ### List management
 
 - A Manage lists button appears at the end of the scrollable task tabs.
 - List management supports creating, renaming, reordering, and deleting custom lists.
-- Deleting a list also deletes its tasks, after confirmation.
+- Deleting a custom list also deletes its tasks, after confirmation; the stable default Inbox is protected. Deletion also stops its recurrence templates and removes their occurrences/overrides, with the consequences shown in confirmation.
 
 ## Separate notes
 
@@ -101,6 +110,7 @@ Settings open from Home.
 
 - Use scrollable tabs above the task content.
 - Tab order: Today, Upcoming, Anytime, Inbox, then custom lists.
+- The Inbox tab displays the current name of the stable default list when renamed.
 - Today, Upcoming, and Anytime are date-based views across lists.
 - Upcoming includes scheduled dates from tomorrow through today + 7 local calendar days, inclusive; Home's upcoming section still ends on Sunday.
 - Custom list tabs display the tasks belonging to each list.
@@ -149,13 +159,9 @@ Deferred: accounts and optional cloud sync.
 
 - The presentation of the dedicated Upcoming task tab.
 - How many recent notes appear on Home and how note cards are ordered.
-- Editing and deleting one recurring occurrence versus the whole series.
-- Monthly repetition when a month lacks the selected day.
-- Reminder behavior for overdue tasks, missed reminders, and changed scheduled dates.
-- Whether the built-in Inbox can be renamed or deleted.
 - Deletion behavior for individual tasks and notes, including any undo or recovery.
 - Backup format, export destination, and restore behavior.
 - Exact search matching rules and Home search coverage.
 - Screen mockups and a walkthrough of the daily workflow.
 
-These remaining details are open questions, not additional agreed features.
+These remaining details are not additional agreed features. Resolve them in their own groomed issues under the owner's delegation; task-policy choices for issue #2 are fully recorded in [behavior.md](behavior.md).
