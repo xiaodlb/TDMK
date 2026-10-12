@@ -21,7 +21,7 @@ class RecurrenceRepository internal constructor(private val database: TdmkDataba
             validate(RecurrenceSpec(revision.anchorDate, revision.frequency, revision.title, template.listId,
                 revision.priority, revision.shortNote, revision.reminderTime, prototypes))
             require(revision.effectiveFrom.year in 1..9999)
-            if (index == 0) require(revision.effectiveFrom == revision.anchorDate)
+            if (index == 0) require(revision.effectiveFrom <= revision.anchorDate)
             val next = revisions.getOrNull(index + 1)
             require(revision.effectiveUntil == next?.effectiveFrom)
             if (next != null) require(next.effectiveFrom >= revision.effectiveFrom)
@@ -48,7 +48,7 @@ class RecurrenceRepository internal constructor(private val database: TdmkDataba
             database.lists().find(id) != null || database.subtasks().find(id) != null || database.notes().find(id) != null)
         val time = now()
         dao.insert(RecurrenceTemplate(id, valid.listId!!, true, time, time))
-        insertRevision(id, 1, valid.anchorDate, valid)
+        insertRevision(id, 1, minOf(valid.anchorDate, today()), valid)
         read(id)
     }
 

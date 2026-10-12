@@ -193,6 +193,6 @@ class SubtaskRepositoryTest {
         assertEquals(checked, provider.getSubtaskRepository().read(child.id))
         assertEquals(expectedDated, provider.getTaskRepository().read(datedId)); assertEquals(expectedUndated, provider.getTaskRepository().read(undatedId)); assertEquals(expectedDone, provider.getTaskRepository().read(doneId))
         assertEquals(expectedList, provider.getListRepository().initialize()); assertEquals(Settings(1, Appearance.DARK), provider.getDatabase().settings().read())
-        assertEquals(5, provider.getDatabase().openHelper.readableDatabase.version)
+        assertEquals(6, provider.getDatabase().openHelper.readableDatabase.version)
     }
 }

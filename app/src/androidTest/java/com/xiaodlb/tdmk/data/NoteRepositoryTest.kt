@@ -139,6 +139,6 @@ class NoteRepositoryTest {
         provider.close()
         assertEquals(note, provider.getNoteRepository().read(note.id))
         assertEquals(expectedTask, provider.getTaskRepository().read(taskId)); assertEquals(expectedList, provider.getListRepository().initialize()); assertEquals(expectedChild, provider.getSubtaskRepository().read(childId))
-        assertEquals(Settings(1, Appearance.DARK), provider.getDatabase().settings().read()); assertEquals(5, provider.getDatabase().openHelper.readableDatabase.version)
+        assertEquals(Settings(1, Appearance.DARK), provider.getDatabase().settings().read()); assertEquals(6, provider.getDatabase().openHelper.readableDatabase.version)
     }
 }

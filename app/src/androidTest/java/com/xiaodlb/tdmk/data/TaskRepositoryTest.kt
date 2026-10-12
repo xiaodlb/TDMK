@@ -173,7 +173,7 @@ class TaskRepositoryTest {
         assertEquals(1, restartedCandidates.size)
         val later = TaskViews(Clock.fixed(day.plusDays(2).atStartOfDay(ZoneId.of("Asia/Qyzylorda")).toInstant(), ZoneId.of("Asia/Qyzylorda")))
         assertEquals(listOf(persisted), later.history(restartedCandidates).single().tasks)
-        assertEquals(5, provider.getDatabase().openHelper.readableDatabase.version)
+        assertEquals(6, provider.getDatabase().openHelper.readableDatabase.version)
         provider.getTaskRepository().delete(persisted.id)
         assertTrue(later.history(provider.getTaskRepository().viewCandidates().first()).isEmpty())
     }
@@ -288,6 +288,6 @@ class TaskRepositoryTest {
         assertEquals(task, provider.getTaskRepository().read(task.id))
         assertEquals(originalLists, provider.getListRepository().readAll())
         assertEquals(Settings(1, Appearance.DARK), provider.getDatabase().settings().read())
-        assertEquals(5, provider.getDatabase().openHelper.readableDatabase.version)
+        assertEquals(6, provider.getDatabase().openHelper.readableDatabase.version)
     }
 }
