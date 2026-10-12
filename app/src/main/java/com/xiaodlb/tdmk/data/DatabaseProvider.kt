@@ -22,14 +22,16 @@ class DatabaseProvider(context: Context, private val filename: String = DATABASE
             .addCallback(object : RoomDatabase.Callback() {
                 override fun onCreate(db: SupportSQLiteDatabase) {
                     db.execSQL("INSERT INTO settings (id, appearance) VALUES (1, 'system')")
+                    ListSchema.installDefaultConstraints(db)
                 }
             })
-            // Register explicit, tested migrations here when a later issue increments the version.
+            .addMigrations(ListSchema.migration1To2)
             // No destructive migration, downgrade or automatic file recovery is permitted.
             .build()
         try {
             // Room.build() is lazy. Open and validate before publishing a successful instance.
             database.openHelper.writableDatabase
+            ListRepository(database).initialize()
         } catch (failure: Exception) {
             try {
                 database.close()
@@ -40,6 +42,9 @@ class DatabaseProvider(context: Context, private val filename: String = DATABASE
         }
         return database.also { instance = it }
     }
+
+    @WorkerThread
+    fun getListRepository(): ListRepository = ListRepository(getDatabase())
 
     /** Only for an owner shutting down all users of this provider, including device tests. */
     @Synchronized
