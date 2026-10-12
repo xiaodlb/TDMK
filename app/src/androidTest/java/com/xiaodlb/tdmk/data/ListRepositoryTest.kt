@@ -174,6 +174,6 @@ class ListRepositoryTest {
         assertEquals(default, provider.getListRepository().initialize())
         assertEquals(added, provider.getListRepository().read(added.id))
         assertEquals(Settings(1, Appearance.LIGHT), provider.getDatabase().settings().read())
-        assertEquals(2, provider.getDatabase().openHelper.readableDatabase.version)
+        assertEquals(3, provider.getDatabase().openHelper.readableDatabase.version)
     }
 }

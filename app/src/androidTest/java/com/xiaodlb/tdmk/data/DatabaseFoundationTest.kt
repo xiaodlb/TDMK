@@ -58,7 +58,7 @@ class DatabaseFoundationTest {
             assertTrue(it.moveToFirst())
             assertEquals(1, it.getInt(0))
         }
-        assertEquals(2, third.openHelper.readableDatabase.version)
+        assertEquals(3, third.openHelper.readableDatabase.version)
     }
 
     @Test
@@ -105,22 +105,22 @@ class DatabaseFoundationTest {
     @Test
     fun unsupportedDowngradeFailsAndPreservesSentinelAndVersion() {
         val name = fixtureName()
-        createIncompatibleFixture(name, 3)
+        createIncompatibleFixture(name, 4)
         val owner = provider(name)
         repeat(2) {
             val failure = assertThrows(IllegalStateException::class.java) { owner.getDatabase() }
-            assertTrue(failure.message.orEmpty(), failure.message.orEmpty().contains("3 to 2"))
-            assertFixtureUnchanged(name, 3)
+            assertTrue(failure.message.orEmpty(), failure.message.orEmpty().contains("4 to 3"))
+            assertFixtureUnchanged(name, 4)
         }
     }
 
     @Test
     fun incompatibleCurrentSchemaFailsAndPreservesSentinelAndVersion() {
         val name = fixtureName()
-        createIncompatibleFixture(name, 2)
+        createIncompatibleFixture(name, 3)
         val failure = assertThrows(IllegalStateException::class.java) { provider(name).getDatabase() }
         assertTrue(failure.message.orEmpty(), failure.message.orEmpty().contains("invalid schema", ignoreCase = true))
-        assertFixtureUnchanged(name, 2)
+        assertFixtureUnchanged(name, 3)
     }
 
     @Test
