@@ -4,6 +4,8 @@ All 39 implementation tasks have moved to [GitHub Issues](https://github.com/xia
 
 Each issue includes its goal, description, and project context. Original task numbers are preserved in issue titles; references to task numbers use this index.
 
+All 40 current issues were groomed sequentially using `_docs/task-template.md`. The matching issue-body snapshots are in [issues/](issues/); see [the grooming record](issues/README.md). Grooming defines the work and does not mark it implemented or close the issue.
+
 Follow [the work process](process.md): work on one GitHub issue at a time, read acceptance criteria before starting and before closing, and commit regularly. Establish checkable criteria before implementation if an issue does not yet contain them.
 
 - Task 1: [Set up an empty Android project with a passing test](https://github.com/xiaodlb/TDMK/issues/1)
