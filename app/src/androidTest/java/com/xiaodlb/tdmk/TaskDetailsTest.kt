@@ -31,8 +31,8 @@ class TaskDetailsTest {
         android.os.ParcelFileDescriptor.AutoCloseInputStream(descriptor).bufferedReader().use { it.readText() }.trim()
     }
     private fun waitTag(tag:String) { compose.waitUntil(10_000) { compose.onAllNodesWithTag(tag).fetchSemanticsNodes().isNotEmpty() } }
-    private fun closed() { compose.waitUntil(10_000) { compose.onAllNodesWithTag("task_details").fetchSemanticsNodes().isEmpty() }; compose.onNodeWithTag("screen_Tasks").assertExists() }
-    private fun edit(tag:String,value:String) { compose.onNodeWithTag(tag).performScrollTo().performTextReplacement(value) }
+    private fun closed() { compose.waitUntil(10_000) { compose.onAllNodesWithTag("task_details").fetchSemanticsNodes().isEmpty() && compose.activity.hasWindowFocus() }; compose.onNodeWithTag("screen_Tasks").assertExists() }
+    private fun edit(tag:String,value:String) { compose.onNodeWithTag(tag).performScrollTo().performTextReplacement(value); text(tag,value) }
     private fun click(tag:String) { val node=compose.onNodeWithTag(tag); if(!tag.startsWith("tab_") && !tag.startsWith("choose_list_")) node.performScrollTo(); if(tag=="details_save") { compose.waitForIdle(); android.os.SystemClock.sleep(700) }; node.performClick() }
     private fun open() { waitTag("details_${seeded.id}"); click("details_${seeded.id}"); waitTag("details_title") }
     private fun text(tag:String,value:String) { compose.onNodeWithTag(tag).assert(SemanticsMatcher("Editable value $value") { it.config[androidx.compose.ui.semantics.SemanticsProperties.EditableText].text==value }) }
