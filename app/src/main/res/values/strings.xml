@@ -19,4 +19,8 @@
     <string name="appearance_save_error">Couldn’t save appearance. Your saved choice is unchanged. Select an option to retry.</string>
     <string name="appearance_load_error">Couldn’t load appearance. Please try again.</string>
     <string name="retry">Retry</string>
+    <string name="task_title">Task title</string>
+    <string name="save_task">Save</string>
+    <string name="saving_task">Saving…</string>
+    <string name="cancel">Cancel</string>
 </resources>

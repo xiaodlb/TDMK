@@ -17,6 +17,7 @@ class ListRepository internal constructor(
     }
 
     fun readAll(): List<TaskList> = dao.all()
+    fun observe() = dao.observe()
 
     fun read(id: String): TaskList = find(id)
 

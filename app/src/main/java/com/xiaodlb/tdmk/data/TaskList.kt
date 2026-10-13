@@ -20,6 +20,9 @@ data class TaskList(
 @Dao
 internal interface ListDao {
     @Query("SELECT * FROM lists ORDER BY `order`")
+    fun observe(): kotlinx.coroutines.flow.Flow<List<TaskList>>
+
+    @Query("SELECT * FROM lists ORDER BY `order`")
     fun all(): List<TaskList>
 
     @Query("SELECT * FROM lists WHERE id = :id")

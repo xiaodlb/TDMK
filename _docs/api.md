@@ -15,6 +15,7 @@ This documents the implemented Kotlin/Room interfaces. TDMK has no HTTP service,
 ```kotlin
 fun initialize(): TaskList
 fun readAll(): List<TaskList>
+fun observe(): Flow<List<TaskList>>
 fun read(id: String): TaskList
 fun create(name: String): TaskList
 fun rename(id: String, name: String): TaskList

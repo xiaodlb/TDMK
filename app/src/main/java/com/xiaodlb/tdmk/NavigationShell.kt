@@ -27,7 +27,7 @@ private enum class MainTab(@param:StringRes val label: Int, @param:DrawableRes v
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun NavigationShell(appearance: Appearance, enabled: Boolean, saveError: Boolean, onAppearance: (Appearance) -> Unit) {
+fun NavigationShell(appearance: Appearance, enabled: Boolean, saveError: Boolean, onAppearance: (Appearance) -> Unit, taskContent: @Composable () -> Unit) {
     var route by rememberSaveable { mutableStateOf(MainTab.Home.name) }
     val settings = route == "Settings"
     val tab = if (settings) MainTab.Home else MainTab.valueOf(route)
@@ -67,7 +67,7 @@ fun NavigationShell(appearance: Appearance, enabled: Boolean, saveError: Boolean
     ) { padding ->
         Column(
             modifier = Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding)
-                .testTag("screen_$route").verticalScroll(rememberScrollState()).padding(horizontal = ShellSpacing.page, vertical = ShellSpacing.vertical),
+                .imePadding().testTag("screen_$route").verticalScroll(rememberScrollState()).padding(horizontal = ShellSpacing.page, vertical = ShellSpacing.vertical),
             verticalArrangement = Arrangement.spacedBy(ShellSpacing.gap),
         ) {
             Text(
@@ -76,6 +76,7 @@ fun NavigationShell(appearance: Appearance, enabled: Boolean, saveError: Boolean
                 modifier = Modifier.semantics { heading() },
             )
             if (settings) AppearanceControls(appearance, enabled, saveError, onAppearance)
+            else if (tab == MainTab.Tasks) taskContent()
             else Text(text = stringResource(tab.description), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }

@@ -39,7 +39,9 @@ class MainActivity : ComponentActivity() {
             }
             AppTheme(dark) {
                 Surface(Modifier.fillMaxSize().testTag(if (dark) "theme_dark" else "theme_light")) {
-                    if (state.saved != null) NavigationShell(state.saved, !state.pending, state.error, ::saveAppearance)
+                    if (state.saved != null) NavigationShell(state.saved, !state.pending, state.error, ::saveAppearance) {
+                        TaskWorkspace(provider, onDetails = { id -> requestTaskDetails(id) })
+                    }
                     else Column(Modifier.safeDrawingPadding().padding(ShellSpacing.page), horizontalAlignment = Alignment.CenterHorizontally) {
                         if (state.error) {
                             Text(stringResource(R.string.appearance_load_error))
@@ -72,6 +74,13 @@ class MainActivity : ComponentActivity() {
             } catch (cancelled: CancellationException) { throw cancelled }
             catch (_: Exception) { appearance = appearance.copy(pending = false, error = true) }
         }
+    }
+
+    // #17 will consume this stable-ID request to open the editor.
+    private var requestedTaskDetailsId: String? = null
+    private fun requestTaskDetails(id: String) {
+        requestedTaskDetailsId = id
+        android.widget.Toast.makeText(this, "Task details are coming soon.", android.widget.Toast.LENGTH_SHORT).show()
     }
 
     override fun onDestroy() { scope.cancel(); super.onDestroy() }
