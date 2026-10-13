@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -73,6 +74,7 @@ fun TaskDetailsSheet(model: TaskDetailsModel, provider: DatabaseProvider) {
                 OutlinedTextField(draft.note, { model.edit(draft.copy(note = it)) }, enabled = !model.pending,
                     label = { Text("Short note (optional)") }, minLines = 3, maxLines = 8,
                     modifier = Modifier.fillMaxWidth().testTag("details_note"))
+                ChecklistEditor(model)
             }
             model.error?.let { Text(it, color = MaterialTheme.colorScheme.error,
                 modifier = Modifier.testTag("details_error").semantics { liveRegion = LiveRegionMode.Polite }) }
@@ -85,4 +87,40 @@ fun TaskDetailsSheet(model: TaskDetailsModel, provider: DatabaseProvider) {
             }
         }
     }
+    model.deleting?.let { child ->
+        AlertDialog(onDismissRequest = model::cancelDelete,
+            title = { Text("Delete checklist item?") },
+            text = { Text("“${child.text}” will be permanently deleted when you Save the task. Canceling the sheet keeps the saved item.") },
+            confirmButton = { TextButton(onClick = model::confirmDelete, modifier = Modifier.testTag("confirm_child_delete")) { Text("Delete on Save") } },
+            dismissButton = { TextButton(onClick = model::cancelDelete, modifier = Modifier.testTag("cancel_child_delete")) { Text("Keep item") } })
+    }
+}
+
+@Composable
+private fun ChecklistEditor(model: TaskDetailsModel) {
+    Text("Checklist", style = MaterialTheme.typography.titleMedium, modifier = Modifier.semantics { heading() })
+    Text("Changes, including confirmed deletions, apply when you Save.", style = MaterialTheme.typography.bodyMedium)
+    model.children.forEachIndexed { index, child ->
+        key(child.key) {
+            Column(Modifier.fillMaxWidth().testTag("child_${child.key}"), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                OutlinedTextField(child.text, { model.editChild(child.key, text = it) }, enabled = !model.pending,
+                    label = { Text("Checklist item ${index + 1}") }, modifier = Modifier.fillMaxWidth().testTag("child_text_${child.key}"))
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                    Row(Modifier.weight(1f).heightIn(min = 48.dp).toggleable(child.checked, enabled = !model.pending,
+                        role = Role.Checkbox, onValueChange = { model.editChild(child.key, checked = it) })
+                        .testTag("child_check_${child.key}").semantics { contentDescription = "Complete checklist item ${index + 1}: ${child.text}" },
+                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                        Checkbox(child.checked, null, enabled = !model.pending); Text("Done")
+                    }
+                    TextButton(onClick = { model.askDelete(child) }, enabled = !model.pending,
+                        modifier = Modifier.heightIn(min = 48.dp).testTag("child_delete_${child.key}")
+                            .semantics { contentDescription = "Delete checklist item ${index + 1}: ${child.text}" }) { Text("Delete") }
+                }
+            }
+        }
+    }
+    OutlinedTextField(model.newChildText, model::editNewChild, enabled = !model.pending,
+        label = { Text("New checklist item") }, modifier = Modifier.fillMaxWidth().testTag("new_child_text"))
+    OutlinedButton(onClick = model::addChild, enabled = !model.pending, modifier = Modifier.testTag("add_child")) { Text("Add item") }
 }

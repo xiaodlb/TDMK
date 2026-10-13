@@ -11,16 +11,17 @@ class SubtaskRepository internal constructor(private val database: TdmkDatabase)
     fun readForParent(taskId: String): List<Subtask> { parent(taskId); return dao.forParent(taskId) }
 
     fun create(taskId: String, text: String): Subtask = add(taskId, text, true)
+    internal fun createDraft(taskId: String, text: String, checked: Boolean): Subtask = add(taskId, text, true, checked)
     internal fun createGenerated(taskId: String, text: String): Subtask = add(taskId, text, false)
-    private fun add(taskId: String, text: String, userEdit: Boolean): Subtask = transaction {
+    private fun add(taskId: String, text: String, userEdit: Boolean, checked: Boolean = false): Subtask = transaction {
         val valid = StoredText.label(text)
         val owner = parent(taskId)
         var id: String
         do { id = UUID.randomUUID().toString() } while (dao.find(id) != null ||
             database.tasks().find(id) != null || database.lists().find(id) != null || database.notes().find(id) != null || database.recurrence().find(id) != null)
-        val child = Subtask(id, taskId, valid, dao.forParent(taskId).size.toLong())
+        val child = Subtask(id, taskId, valid, dao.forParent(taskId).size.toLong(), checked)
         dao.insert(child)
-        if (owner.completedAt != null) TaskRepository(database).reopen(taskId)
+        if (!checked && owner.completedAt != null) TaskRepository(database).reopen(taskId)
         if (userEdit) TaskRepository(database).markChecklistOverride(taskId)
         child
     }
