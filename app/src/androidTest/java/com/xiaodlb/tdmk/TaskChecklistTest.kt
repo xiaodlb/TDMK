@@ -141,7 +141,9 @@ class TaskChecklistTest {
                         click("child_delete_${child.id}"); waitTag("confirm_child_delete"); compose.onNodeWithTag("confirm_child_delete").assertIsDisplayed()
                         if(scale=="1.0" && label=="portrait" && mode==Appearance.LIGHT) capture("checklist-confirmation")
                         click("cancel_child_delete")
-                        click("new_child_text"); compose.onNodeWithTag("details_save").performScrollTo().assertIsDisplayed(); compose.onNodeWithTag("details_cancel").assertIsDisplayed(); android.os.SystemClock.sleep(700)
+                        click("new_child_text"); compose.waitUntil(10_000) { shell("dumpsys input_method").contains("mInputShown=true") }
+                        android.os.SystemClock.sleep(700)
+                        compose.onNodeWithTag("details_save").performScrollTo().assertIsDisplayed(); compose.onNodeWithTag("details_cancel").assertIsDisplayed(); android.os.SystemClock.sleep(700)
                         capture("checklist-${mode.storedValue}-$label-font$scale")
                     }
                 }
