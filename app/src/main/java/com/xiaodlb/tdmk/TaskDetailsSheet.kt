@@ -11,6 +11,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.window.DialogWindowProvider
 import androidx.core.view.WindowCompat
 import androidx.compose.ui.platform.testTag
@@ -23,11 +24,12 @@ import com.xiaodlb.tdmk.data.DatabaseProvider
 fun TaskDetailsSheet(model: TaskDetailsModel, provider: DatabaseProvider) {
     val id = model.selectedId ?: return
     val pending by rememberUpdatedState(model.pending)
+    val maximumHeight = (LocalConfiguration.current.screenHeightDp - 64).coerceAtLeast(96).dp
     val sheet = rememberModalBottomSheetState(skipPartiallyExpanded = true, confirmValueChange = { it != SheetValue.Hidden || !pending })
     ModalBottomSheet(onDismissRequest = model::dismiss, sheetState = sheet,
         properties = ModalBottomSheetProperties(shouldDismissOnBackPress = !model.pending),
         containerColor = MaterialTheme.colorScheme.surface,
-        modifier = Modifier.padding(top = 32.dp).testTag("task_details")) {
+        modifier = Modifier.heightIn(max = maximumHeight).testTag("task_details")) {
         val view = LocalView.current
         val dark = MaterialTheme.colorScheme.background.luminance() < 0.5f
         LaunchedEffect(view, dark) {

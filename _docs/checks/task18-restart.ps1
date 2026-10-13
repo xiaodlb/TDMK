@@ -34,4 +34,3 @@ try {
 } finally {
     if ($oldAirplane -eq "0") { Invoke-Adb @("shell", "cmd", "connectivity", "airplane-mode", "disable") }
 }
-

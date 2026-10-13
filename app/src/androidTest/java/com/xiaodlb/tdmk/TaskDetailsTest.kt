@@ -76,7 +76,7 @@ class TaskDetailsTest {
         compose.waitUntil(10_000) { !shell("dumpsys input_method").contains("mInputShown=true") }
         android.os.SystemClock.sleep(700)
         val density=compose.activity.resources.displayMetrics.density
-        shell("input tap ${compose.activity.resources.displayMetrics.widthPixels/2} ${(64*density).toInt()}"); closed(); assertEquals(saved,repository.read(seeded.id))
+        shell("input tap ${compose.activity.resources.displayMetrics.widthPixels/2} ${(48*density).toInt()}"); closed(); assertEquals(saved,repository.read(seeded.id))
         open(); edit("details_title","Swipe draft"); shell("input keyevent 4")
         compose.waitUntil(10_000) { !shell("dumpsys input_method").contains("mInputShown=true") }
         compose.onNodeWithTag("task_details").performTouchInput { swipeDown(startY=20f,endY=height.toFloat()-20f,durationMillis=500) }

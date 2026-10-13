@@ -64,6 +64,12 @@ class TaskChecklistTest {
         val children=subs.readForParent(parent.id); assertTrue(children[0].isCompleted); assertFalse(children[1].isCompleted)
         open(); children.forEach { click("child_delete_${it.id}"); click("confirm_child_delete") }; click("details_save"); closed(); assertTrue(subs.readForParent(parent.id).isEmpty())
         click("complete_${parent.id}"); compose.waitUntil(10_000) { tasks.read(parent.id).completedAt!=null }
+        val completedEmpty=tasks.read(parent.id)
+        open(); add("Checked addition"); val addedKey=draft().children.single().key; click("child_check_$addedKey"); click("details_save"); closed()
+        assertEquals(completedEmpty.completedAt,tasks.read(parent.id).completedAt)
+        val checkedAddition=subs.readForParent(parent.id).single()
+        open(); click("child_delete_${checkedAddition.id}"); click("confirm_child_delete"); click("details_save"); closed()
+        assertEquals(completedEmpty.completedAt,tasks.read(parent.id).completedAt); assertTrue(subs.readForParent(parent.id).isEmpty())
     }
     @Test fun atomicFailureInvalidMissingCascadeAndOccurrenceIsolation() {
         val child=subs.create(parent.id,"Original"); val original=tasks.read(parent.id)
@@ -97,7 +103,7 @@ class TaskChecklistTest {
         shell("input keyevent 4"); closed(); assertEquals(child,subs.read(child.id))
         open(); edit("child_text_${child.id}","Outside draft"); shell("input keyevent 4")
         compose.waitUntil(10_000) { !shell("dumpsys input_method").contains("mInputShown=true") }; android.os.SystemClock.sleep(700)
-        shell("input tap ${compose.activity.resources.displayMetrics.widthPixels/2} ${(64*compose.activity.resources.displayMetrics.density).toInt()}"); closed(); assertEquals(child,subs.read(child.id))
+        shell("input tap ${compose.activity.resources.displayMetrics.widthPixels/2} ${(48*compose.activity.resources.displayMetrics.density).toInt()}"); closed(); assertEquals(child,subs.read(child.id))
         open(); edit("child_text_${child.id}","Swipe draft"); shell("input keyevent 4")
         compose.waitUntil(10_000) { !shell("dumpsys input_method").contains("mInputShown=true") }
         compose.onNodeWithTag("task_details").performTouchInput { swipeDown(startY=20f,endY=height.toFloat()-20f,durationMillis=500) }; closed(); assertEquals(child,subs.read(child.id))
