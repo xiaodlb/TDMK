@@ -5,6 +5,7 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 import androidx.room.Query
 import androidx.room.TypeConverter
+import kotlinx.coroutines.flow.Flow
 
 enum class Appearance(val storedValue: String) {
     SYSTEM("system"), LIGHT("light"), DARK("dark")
@@ -32,6 +33,9 @@ data class Settings(
 interface SettingsDao {
     @Query("SELECT * FROM settings WHERE id = 1")
     fun read(): Settings
+
+    @Query("SELECT * FROM settings WHERE id = 1")
+    fun observe(): Flow<Settings>
 
     // A single SQL update is atomic; no insertion/deletion API can create another singleton.
     @Query("UPDATE settings SET appearance = :appearance WHERE id = 1")

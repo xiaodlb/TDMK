@@ -11,4 +11,12 @@
     <string name="notes_placeholder">Your notes will appear here.</string>
     <string name="log_placeholder">Your completed tasks will appear here.</string>
     <string name="settings_placeholder">App preferences will be available here.</string>
+    <string name="appearance">Appearance</string>
+    <string name="appearance_hint">Follow your phone, or choose an appearance.</string>
+    <string name="appearance_system">System</string>
+    <string name="appearance_light">Light</string>
+    <string name="appearance_dark">Dark</string>
+    <string name="appearance_save_error">Couldn’t save appearance. Your saved choice is unchanged. Select an option to retry.</string>
+    <string name="appearance_load_error">Couldn’t load appearance. Please try again.</string>
+    <string name="retry">Retry</string>
 </resources>

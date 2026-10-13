@@ -15,6 +15,7 @@ TDMK is a personal Android task planner with separate notes. The agreed stack is
 Keep project guidance together in `_docs/` and add references here when new guidance is created.
 
 - [`_docs/process.md`](_docs/process.md) - how work is organized. Read before starting work.
+- [`_docs/design-system.md`](_docs/design-system.md) - implemented shared theme, tokens and shell/control rules.
 - Before writing tests, read `_docs/testing-guidelines.md` when present.
 - For anything touching the UI, read `_docs/design-system.md` when present.
 

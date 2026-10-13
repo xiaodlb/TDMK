@@ -16,6 +16,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import com.xiaodlb.tdmk.data.Appearance
 
 private enum class MainTab(@param:StringRes val label: Int, @param:DrawableRes val icon: Int, @param:StringRes val description: Int) {
     Home(R.string.home, R.drawable.ic_home, R.string.home_placeholder),
@@ -26,7 +27,7 @@ private enum class MainTab(@param:StringRes val label: Int, @param:DrawableRes v
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun NavigationShell() {
+fun NavigationShell(appearance: Appearance, enabled: Boolean, saveError: Boolean, onAppearance: (Appearance) -> Unit) {
     var route by rememberSaveable { mutableStateOf(MainTab.Home.name) }
     val settings = route == "Settings"
     val tab = if (settings) MainTab.Home else MainTab.valueOf(route)
@@ -66,19 +67,16 @@ fun NavigationShell() {
     ) { padding ->
         Column(
             modifier = Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding)
-                .testTag("screen_$route").verticalScroll(rememberScrollState()).padding(horizontal = 24.dp, vertical = 32.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+                .testTag("screen_$route").verticalScroll(rememberScrollState()).padding(horizontal = ShellSpacing.page, vertical = ShellSpacing.vertical),
+            verticalArrangement = Arrangement.spacedBy(ShellSpacing.gap),
         ) {
             Text(
                 text = stringResource(if (settings) R.string.settings else tab.label),
                 style = MaterialTheme.typography.headlineLarge,
                 modifier = Modifier.semantics { heading() },
             )
-            Text(
-                text = stringResource(if (settings) R.string.settings_placeholder else tab.description),
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            if (settings) AppearanceControls(appearance, enabled, saveError, onAppearance)
+            else Text(text = stringResource(tab.description), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
