@@ -52,6 +52,18 @@ class RecurrenceRepository internal constructor(private val database: TdmkDataba
         read(id)
     }
 
+    /** Attach an existing dated task to its original slot without replacing its identity or state. */
+    fun convert(taskId: String, spec: RecurrenceSpec): Recurrence = transaction {
+        val task = database.tasks().find(taskId) ?: throw NoSuchElementException("Unknown task ID: $taskId")
+        require(task.seriesId == null) { "Task already belongs to a series" }
+        require(task.scheduledDate != null && task.scheduledDate == spec.anchorDate) { "Choose a date for the first occurrence" }
+        require(task.listId == (spec.listId ?: task.listId)) { "Series list must match the first occurrence" }
+        val series = create(spec)
+        database.tasks().update(task.copy(seriesId = series.template.id, slotDate = spec.anchorDate, sourceRevision = 1))
+        reconcile(series.template.id)
+        read(series.template.id)
+    }
+
     /** Commit supplied due slots and cursor together. Reservations are skipped; duplicate input is invalid. */
     fun writeKnownBatch(id: String, revisionNumber: Int, slots: List<LocalDate>, through: LocalDate): List<Task> =
         writeBatch(id, revisionNumber, slots, through, today())

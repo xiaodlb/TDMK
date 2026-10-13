@@ -41,6 +41,8 @@ fun TaskWorkspace(provider: DatabaseProvider, context: TaskContext = TaskContext
     var pendingIds by remember { mutableStateOf<Set<String>>(emptySet()) }
     var rowErrors by remember { mutableStateOf<Map<String,String>>(emptyMap()) }
     var today by remember { mutableStateOf(LocalDate.now(clock)) }
+    var resumeTick by remember { mutableIntStateOf(0) }
+    var recurrenceError by remember { mutableStateOf(false) }
     LaunchedEffect(returnFocusId) {
         if(returnFocusId != null) {
             // The modal owns a separate Android window; wait until the host owns focus again.
@@ -52,11 +54,16 @@ fun TaskWorkspace(provider: DatabaseProvider, context: TaskContext = TaskContext
     }
     val owner = LocalContext.current as? LifecycleOwner
     DisposableEffect(owner, clock) {
-        val observer = LifecycleEventObserver { _, event -> if(event == Lifecycle.Event.ON_RESUME) today = LocalDate.now(clock) }
+        val observer = LifecycleEventObserver { _, event -> if(event == Lifecycle.Event.ON_RESUME) { today = LocalDate.now(clock); resumeTick++ } }
         owner?.lifecycle?.addObserver(observer)
         onDispose { owner?.lifecycle?.removeObserver(observer) }
     }
     LaunchedEffect(clock) { while(isActive) { delay(60_000); today = LocalDate.now(clock) } }
+    LaunchedEffect(provider, today, resumeTick) {
+        try { withContext(Dispatchers.IO) { provider.getRecurrenceRepository().reconcile() }; recurrenceError = false }
+        catch(cancelled: CancellationException) { throw cancelled }
+        catch(_: Exception) { recurrenceError = true }
+    }
     LaunchedEffect(provider, loadAttempt) {
         loadError = false
         try {
@@ -86,6 +93,7 @@ fun TaskWorkspace(provider: DatabaseProvider, context: TaskContext = TaskContext
             Text("Could not load tasks. Try again.", color = MaterialTheme.colorScheme.error)
             Button(onClick = { loadAttempt++ }) { Text("Retry") }
         }
+        if(recurrenceError) Text("Could not refresh repeating tasks. Reopen this view to retry.", color = MaterialTheme.colorScheme.error)
         if(!loaded) { if(!loadError) CircularProgressIndicator(); return@Column }
         QuickEntry(draft, saving, entryError, { draft = it; entryError = null; savedMessage = null }, ::save,
             { draft = ""; entryError = null; savedMessage = null; keyboard?.hide() })

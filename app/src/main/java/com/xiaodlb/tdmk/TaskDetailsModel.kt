@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import com.xiaodlb.tdmk.data.*
 import kotlinx.coroutines.*
 import java.time.LocalDate
+import java.time.Clock
 import java.util.concurrent.Callable
 import java.util.UUID
 
@@ -45,6 +46,29 @@ class TaskDetailsModel : ViewModel() {
     var pending by mutableStateOf(false); private set
     var error by mutableStateOf<String?>(null); private set
     var returnFocusId by mutableStateOf<String?>(null); private set
+    var series by mutableStateOf<Recurrence?>(null); private set
+    var frequency by mutableStateOf("one_time"); private set
+    var seriesScope by mutableStateOf(false); private set
+    var confirmation by mutableStateOf<String?>(null); private set
+    var preview by mutableStateOf<List<LocalDate>>(emptyList()); private set
+    fun chooseFrequency(value: String) { if(!pending) { frequency = value; error = null; updatePreview() } }
+    fun chooseScope(wholeSeries: Boolean) { if(!pending) {
+        if(seriesScope != wholeSeries) draft = if(wholeSeries) series?.revisions?.last()?.revision?.let { revision ->
+            TaskDraft(revision.title, series!!.template.listId, revision.anchorDate.toString(), revision.priority, revision.shortNote.orEmpty())
+        } else saved?.let(TaskDraft::from)
+        if(seriesScope != wholeSeries) children = if(wholeSeries) series?.revisions?.last()?.checklist?.map {
+            ChecklistDraft(UUID.randomUUID().toString(), null, it.text, false)
+        }.orEmpty() else savedChildren.map { ChecklistDraft(it.id, it.id, it.text, it.isCompleted) }
+        seriesScope = wholeSeries; error = null; updatePreview()
+    } }
+    fun cancelConfirmation() { if(!pending) confirmation = null }
+    fun requestDelete() { if(!pending) confirmation = "delete_scope" }
+    private fun updatePreview() {
+        val date = try { LocalDate.parse(draft?.date ?: "") } catch(_: Exception) { null }
+        preview = if(date == null || frequency == "one_time") emptyList() else try {
+            RecurrenceCalendar.slots(date, frequency, date, minOf(date.plusMonths(4), LocalDate.MAX)).take(3)
+        } catch(_: Exception) { emptyList() }
+    }
     private var savedChildren = emptyList<Subtask>()
     internal var children by mutableStateOf<List<ChecklistDraft>>(emptyList()); private set
     var newChildText by mutableStateOf(""); private set
@@ -66,24 +90,29 @@ class TaskDetailsModel : ViewModel() {
     fun open(id: String, provider: DatabaseProvider) {
         if(pending) return
         loadJob?.cancel()
-        selectedId = id; saved = null; draft = null; lists = emptyList(); children = emptyList(); savedChildren = emptyList(); newChildText = ""; deleting = null; error = null; loading = true; returnFocusId = null
+        selectedId = id; saved = null; draft = null; series = null; frequency = "one_time"; seriesScope = false; confirmation = null; preview = emptyList(); lists = emptyList(); children = emptyList(); savedChildren = emptyList(); newChildText = ""; deleting = null; error = null; loading = true; returnFocusId = null
         loadJob = scope.launch {
             try {
                 val result = withContext(Dispatchers.IO) { provider.getDatabase().runInTransaction(Callable {
-                    Triple(provider.getTaskRepository().read(id), provider.getListRepository().readAll(), provider.getSubtaskRepository().readForParent(id))
+                    val task = provider.getTaskRepository().read(id)
+                    Pair(Triple(task, provider.getListRepository().readAll(), provider.getSubtaskRepository().readForParent(id)),
+                        task.seriesId?.let { provider.getRecurrenceRepository().read(it) })
                 }) }
-                saved = result.first; lists = result.second; draft = TaskDraft.from(result.first)
-                savedChildren = result.third
-                children = result.third.map { ChecklistDraft(it.id, it.id, it.text, it.isCompleted) }
+                saved = result.first.first; lists = result.first.second; draft = TaskDraft.from(result.first.first)
+                series = result.second
+                frequency = result.second?.revisions?.last()?.revision?.frequency ?: "one_time"
+                savedChildren = result.first.third
+                children = result.first.third.map { ChecklistDraft(it.id, it.id, it.text, it.isCompleted) }
+                updatePreview()
             } catch(cancelled: CancellationException) { throw cancelled }
             catch(failure: Exception) { error = if(failure is NoSuchElementException) "This task no longer exists. Dismiss or retry." else "Could not load task. Retry or dismiss." }
             finally { if(selectedId == id) loading = false }
         }
     }
-    internal fun edit(value: TaskDraft) { if(!pending) { draft = value; error = null } }
+    internal fun edit(value: TaskDraft) { if(!pending) { draft = value; error = null; updatePreview() } }
     fun dismiss() {
         if(pending) return
-        loadJob?.cancel(); returnFocusId = selectedId; selectedId = null; saved = null; draft = null; children = emptyList(); savedChildren = emptyList(); newChildText = ""; deleting = null; error = null; loading = false
+        loadJob?.cancel(); returnFocusId = selectedId; selectedId = null; saved = null; draft = null; series = null; confirmation = null; children = emptyList(); savedChildren = emptyList(); newChildText = ""; deleting = null; error = null; loading = false
     }
     fun save(provider: DatabaseProvider) {
         if(pending || loading) return
@@ -91,12 +120,18 @@ class TaskDetailsModel : ViewModel() {
         val editing = draft ?: return
         val checklist = children.toList()
         val originalChildren = savedChildren.toList()
+        val selectedFrequency = frequency
+        val whole = seriesScope
+        if(series != null && selectedFrequency == "one_time" && confirmation != "pause_confirmed") { confirmation = "pause"; return }
         try {
-            editing.content(original, lists.map { it.id }.toSet())
+            val proposed = editing.content(original, lists.map { it.id }.toSet())
+            if(series == null && selectedFrequency != "one_time") require(proposed.scheduledDate != null) { "Choose a scheduled date before starting recurrence." }
+            if(series != null && whole && selectedFrequency != "one_time") require(proposed.scheduledDate != null) { "Choose a series start date." }
             checklist.forEach { it.label() }
             require(newChildText.isEmpty()) { "Use Add item to include the new checklist entry, or clear it before Save." }
         }
-        catch(failure: IllegalArgumentException) { error = failure.message; return }
+        catch(failure: IllegalArgumentException) { confirmation = null; error = failure.message; return }
+        confirmation = null
         pending = true; error = null
         scope.launch {
             try {
@@ -104,17 +139,39 @@ class TaskDetailsModel : ViewModel() {
                     // Check current record/lists and update atomically; deleted identities are never replaced.
                     provider.getDatabase().runInTransaction(Callable {
                         val current = provider.getTaskRepository().read(original.id)
+                        require(current == original) { "This task changed. Dismiss and reopen before saving." }
                         val currentLists = provider.getListRepository().readAll()
                         val childRepository = provider.getSubtaskRepository()
                         require(childRepository.readForParent(original.id) == originalChildren) { "The saved checklist changed or an item was deleted. Dismiss and reopen to reload it; your draft was not saved." }
-                        provider.getTaskRepository().update(original.id, editing.content(current, currentLists.map { it.id }.toSet()))
-                        originalChildren.filter { child -> checklist.none { it.savedId == child.id } }.forEach { childRepository.delete(it.id) }
-                        checklist.forEach { child ->
-                            if(child.savedId == null) childRepository.createDraft(original.id, child.label(), child.checked)
-                            else {
-                                childRepository.edit(child.savedId, child.label())
-                                childRepository.setChecked(child.savedId, child.checked)
+                        val content = editing.content(current, currentLists.map { it.id }.toSet())
+                        val recurrence = provider.getRecurrenceRepository()
+                        val savedSeries = series
+                        if(savedSeries != null) require(recurrence.read(savedSeries.template.id) == savedSeries) { "This series changed. Dismiss and reopen before saving." }
+                        if(savedSeries != null && selectedFrequency == "one_time") {
+                            recurrence.setEnabled(savedSeries.template.id, false)
+                            return@Callable
+                        }
+                        if(savedSeries != null && !whole) require(selectedFrequency == savedSeries.revisions.last().revision.frequency) { "Choose whole series to change frequency." }
+                        if(savedSeries == null || !whole && selectedFrequency != "one_time") provider.getTaskRepository().update(original.id, content)
+                        if(savedSeries == null || !whole) {
+                            originalChildren.filter { child -> checklist.none { it.savedId == child.id } }.forEach { childRepository.delete(it.id) }
+                            checklist.forEach { child ->
+                                if(child.savedId == null) childRepository.createDraft(original.id, child.label(), child.checked)
+                                else {
+                                    childRepository.edit(child.savedId, child.label())
+                                    childRepository.setChecked(child.savedId, child.checked)
+                                }
                             }
+                        }
+                        if(savedSeries == null && selectedFrequency != "one_time") recurrence.convert(original.id, RecurrenceSpec(
+                            requireNotNull(content.scheduledDate), selectedFrequency, content.title, content.listId,
+                            content.priority, content.shortNote, content.reminderTime,
+                            checklist.mapIndexed { index, item -> Prototype(index.toLong(), item.label()) }))
+                        else if(savedSeries != null && whole && selectedFrequency != "one_time") {
+                            recurrence.edit(savedSeries.template.id, RecurrenceSpec(requireNotNull(content.scheduledDate), selectedFrequency,
+                                content.title, content.listId, content.priority, content.shortNote, savedSeries.revisions.last().revision.reminderTime,
+                                checklist.mapIndexed { index, item -> Prototype(index.toLong(), item.label()) }))
+                            recurrence.reconcile(savedSeries.template.id)
                         }
                     })
                 }
@@ -125,6 +182,39 @@ class TaskDetailsModel : ViewModel() {
                 is IllegalArgumentException -> failure.message ?: "Correct the task fields and try Save again."
                 else -> "Could not save task. Your draft is kept; try Save again."
             } } finally { pending = false }
+        }
+    }
+    fun confirmPause(provider: DatabaseProvider) { if(confirmation == "pause") { confirmation = "pause_confirmed"; save(provider) } }
+    fun resume(provider: DatabaseProvider) {
+        val existing = series ?: return
+        if(pending) return
+        if(confirmation != "resume") { confirmation = "resume"; return }
+        confirmation = null; pending = true; error = null
+        scope.launch {
+            try { withContext(Dispatchers.IO) { provider.getDatabase().runInTransaction(Callable {
+                require(provider.getRecurrenceRepository().read(existing.template.id) == existing) { "This series changed. Dismiss and reopen." }
+                provider.getRecurrenceRepository().setEnabled(existing.template.id, true)
+                provider.getRecurrenceRepository().reconcile(existing.template.id)
+            }) }; pending = false; dismiss() }
+            catch(failure: Exception) { error = failure.message ?: "Could not resume series. Try again." }
+            finally { pending = false }
+        }
+    }
+    fun confirmDelete(provider: DatabaseProvider, whole: Boolean) {
+        if(confirmation != "delete_scope" && confirmation != "delete_confirm") return
+        if(confirmation == "delete_scope") { seriesScope = whole; confirmation = "delete_confirm"; return }
+        val current = saved ?: return
+        val existing = series ?: return
+        confirmation = null; pending = true; error = null
+        scope.launch {
+            try { withContext(Dispatchers.IO) { provider.getDatabase().runInTransaction(Callable {
+                require(provider.getTaskRepository().read(current.id) == current) { "This task changed. Dismiss and reopen." }
+                require(provider.getRecurrenceRepository().read(existing.template.id) == existing) { "This series changed. Dismiss and reopen." }
+                if(whole) provider.getRecurrenceRepository().delete(existing.template.id)
+                else provider.getRecurrenceRepository().deleteOccurrence(current.id)
+            }) }; pending = false; dismiss() }
+            catch(failure: Exception) { error = failure.message ?: "Could not delete. Try again." }
+            finally { pending = false }
         }
     }
     override fun onCleared() { scope.cancel() }

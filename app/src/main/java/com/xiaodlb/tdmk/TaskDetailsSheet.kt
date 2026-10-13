@@ -47,6 +47,22 @@ fun TaskDetailsSheet(model: TaskDetailsModel, provider: DatabaseProvider) {
             if(model.loading) CircularProgressIndicator(Modifier.testTag("details_loading"))
             val draft = model.draft
             if(draft != null) {
+                val recurring = model.series
+                if(recurring != null) {
+                    val revision = recurring.revisions.last().revision
+                    Text("Series ${if(recurring.template.enabled) "Enabled" else "Paused"} · ${revision.frequency.replaceFirstChar { it.uppercase() }} · anchor ${revision.anchorDate}",
+                        modifier = Modifier.testTag("details_series_status"))
+                    model.saved?.let { task -> if(task.slotDate != task.scheduledDate) Text("Original slot ${task.slotDate} · displayed ${task.scheduledDate}", modifier = Modifier.testTag("details_slot")) }
+                    Text("Edit", style = MaterialTheme.typography.titleMedium)
+                    listOf(false to "This occurrence", true to "Whole series").forEach { (whole, label) ->
+                        Row(Modifier.fillMaxWidth().selectable(model.seriesScope == whole, enabled = !model.pending,
+                            role = Role.RadioButton, onClick = { model.chooseScope(whole) })
+                            .testTag(if(whole) "details_scope_series" else "details_scope_occurrence").padding(vertical = 4.dp),
+                            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                            RadioButton(model.seriesScope == whole, null); Text(label)
+                        }
+                    }
+                }
                 OutlinedTextField(draft.title, { model.edit(draft.copy(title = it)) }, enabled = !model.pending,
                     label = { Text("Title") }, modifier = Modifier.fillMaxWidth().testTag("details_title"))
                 var expanded by remember(id) { mutableStateOf(false) }
@@ -63,10 +79,23 @@ fun TaskDetailsSheet(model: TaskDetailsModel, provider: DatabaseProvider) {
                     }
                 }
                 OutlinedTextField(draft.date, { model.edit(draft.copy(date = it)) }, enabled = !model.pending,
-                    label = { Text("Scheduled date") }, supportingText = { Text("Optional · YYYY-MM-DD (0001–9999)") }, singleLine = true,
+                    label = { Text(if(model.seriesScope && recurring != null) "Series start date" else "Scheduled date") }, supportingText = { Text("Optional · YYYY-MM-DD (0001–9999)") }, singleLine = true,
                     modifier = Modifier.fillMaxWidth().testTag("details_date"))
                 if(draft.date.isNotEmpty()) TextButton(onClick = { model.edit(draft.copy(date = "")) }, enabled = !model.pending,
                     modifier = Modifier.testTag("clear_date")) { Text("Clear date") }
+                if(recurring == null || model.seriesScope) {
+                    Text("Repeat", style = MaterialTheme.typography.titleMedium)
+                    listOf("one_time" to "One time", "daily" to "Daily", "weekly" to "Weekly", "monthly" to "Monthly").forEach { (value, label) ->
+                        Row(Modifier.fillMaxWidth().selectable(model.frequency == value, enabled = !model.pending,
+                            role = Role.RadioButton, onClick = { model.chooseFrequency(value) })
+                            .testTag("details_frequency_$value").padding(vertical = 4.dp),
+                            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                            RadioButton(model.frequency == value, null); Text(label)
+                        }
+                    }
+                    if(model.preview.isNotEmpty()) Text("Next dates: ${model.preview.joinToString(", ")}", modifier = Modifier.testTag("details_recurrence_preview"))
+                    if(recurring != null) Text("Choosing One time pauses this series after confirmation. Existing occurrences stay saved.")
+                }
                 Text("Priority", style = MaterialTheme.typography.titleMedium)
                 for(priority in listOf("high", "medium", "low")) {
                     val label = priority.replaceFirstChar { it.uppercase() }
@@ -91,6 +120,12 @@ fun TaskDetailsSheet(model: TaskDetailsModel, provider: DatabaseProvider) {
                 OutlinedButton(onClick = model::dismiss, enabled = !model.pending,
                     modifier = Modifier.weight(1f).testTag("details_cancel")) { Text("Cancel") }
             }
+            if(model.series != null && draft != null) {
+                if(model.series?.template?.enabled == false) OutlinedButton(onClick = { model.resume(provider) }, enabled = !model.pending,
+                    modifier = Modifier.fillMaxWidth().testTag("details_resume")) { Text("Resume series") }
+                TextButton(onClick = model::requestDelete, enabled = !model.pending,
+                    modifier = Modifier.fillMaxWidth().testTag("details_delete_series")) { Text("Delete recurring task…") }
+            }
         }
     }
     model.deleting?.let { child ->
@@ -99,6 +134,27 @@ fun TaskDetailsSheet(model: TaskDetailsModel, provider: DatabaseProvider) {
             text = { Text("“${child.text}” will be permanently deleted when you Save the task. Canceling the sheet keeps the saved item.") },
             confirmButton = { TextButton(onClick = model::confirmDelete, modifier = Modifier.testTag("confirm_child_delete")) { Text("Delete on Save") } },
             dismissButton = { TextButton(onClick = model::cancelDelete, modifier = Modifier.testTag("cancel_child_delete")) { Text("Keep item") } })
+    }
+    when(model.confirmation) {
+        "pause" -> AlertDialog(onDismissRequest = model::cancelConfirmation, title = { Text("Pause series?") },
+            text = { Text("Existing occurrences and completed history remain. New dates will resume when you resume this series.") },
+            confirmButton = { TextButton(onClick = { model.confirmPause(provider) }, modifier = Modifier.testTag("confirm_pause")) { Text("Pause series") } },
+            dismissButton = { TextButton(onClick = model::cancelConfirmation) { Text("Keep repeating") } })
+        "resume" -> AlertDialog(onDismissRequest = model::cancelConfirmation, title = { Text("Resume series?") },
+            text = { Text("Missed due dates will be added once, while existing occurrences remain.") },
+            confirmButton = { TextButton(onClick = { model.resume(provider) }, modifier = Modifier.testTag("confirm_resume")) { Text("Resume series") } },
+            dismissButton = { TextButton(onClick = model::cancelConfirmation) { Text("Cancel") } })
+        "delete_scope" -> AlertDialog(onDismissRequest = model::cancelConfirmation, title = { Text("Delete recurring task") },
+            text = { Text("Choose which records to delete.") },
+            confirmButton = { Column {
+                TextButton(onClick = { model.confirmDelete(provider, false) }, modifier = Modifier.testTag("delete_one_choice")) { Text("This occurrence") }
+                TextButton(onClick = { model.confirmDelete(provider, true) }, modifier = Modifier.testTag("delete_series_choice")) { Text("Entire series") }
+            } }, dismissButton = { TextButton(onClick = model::cancelConfirmation) { Text("Cancel") } })
+        "delete_confirm" -> AlertDialog(onDismissRequest = model::cancelConfirmation,
+            title = { Text(if(model.seriesScope) "Delete entire series permanently?" else "Delete this occurrence permanently?") },
+            text = { Text(if(model.seriesScope) "All occurrences, completed history and exclusions will be removed." else "This original date will be reserved so it does not return.") },
+            confirmButton = { TextButton(onClick = { model.confirmDelete(provider, model.seriesScope) }, modifier = Modifier.testTag("confirm_recurrence_delete")) { Text("Delete permanently") } },
+            dismissButton = { TextButton(onClick = model::cancelConfirmation) { Text("Cancel") } })
     }
 }
 

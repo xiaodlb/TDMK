@@ -33,8 +33,9 @@ class TaskDetailsTest {
     private fun waitTag(tag:String) { compose.waitUntil(10_000) { compose.onAllNodesWithTag(tag).fetchSemanticsNodes().isNotEmpty() } }
     private fun closed() { compose.waitUntil(10_000) { compose.onAllNodesWithTag("task_details").fetchSemanticsNodes().isEmpty() && compose.activity.hasWindowFocus() }; compose.onNodeWithTag("screen_Tasks").assertExists() }
     private fun edit(tag:String,value:String) { compose.onNodeWithTag(tag).performScrollTo().performTextReplacement(value); text(tag,value) }
-    private fun click(tag:String) { val node=compose.onNodeWithTag(tag); if(!tag.startsWith("tab_") && !tag.startsWith("choose_list_")) node.performScrollTo(); if(tag=="details_save") { compose.waitForIdle(); android.os.SystemClock.sleep(700) }; node.performClick() }
+    private fun click(tag:String) { val node=compose.onNodeWithTag(tag); if(!tag.startsWith("tab_") && !tag.startsWith("choose_list_") && !tag.startsWith("confirm_") && !tag.startsWith("delete_one_choice") && !tag.startsWith("delete_series_choice")) node.performScrollTo(); if(tag=="details_save") { compose.waitForIdle(); android.os.SystemClock.sleep(700) }; node.performClick() }
     private fun open() { waitTag("details_${seeded.id}"); click("details_${seeded.id}"); waitTag("details_title") }
+    private fun openId(id: String) { compose.activityRule.scenario.onActivity { ViewModelProvider(it)[TaskDetailsModel::class.java].open(id, provider) }; waitTag("details_title") }
     private fun text(tag:String,value:String) { compose.onNodeWithTag(tag).assert(SemanticsMatcher("Editable value $value") { it.config[androidx.compose.ui.semantics.SemanticsProperties.EditableText].text==value }) }
     @Before fun prepare() {
         oldAppearance=provider.getDatabase().settings().read().appearance
@@ -114,6 +115,48 @@ class TaskDetailsTest {
         assertFalse(runBlocking { repository.viewCandidates().first() }.any { it.id==seeded.id }); click("details_cancel"); closed()
         compose.activityRule.scenario.onActivity { ViewModelProvider(it)[TaskDetailsModel::class.java].open("missing-id",provider) }
         waitTag("details_retry"); click("details_retry"); waitTag("details_retry"); click("details_cancel"); closed()
+    }
+    @Test fun realRowConvertsThenScopedPauseResumeAndDeletePersist() {
+        val yesterday = LocalDate.now().minusDays(1)
+        open()
+        edit("details_date", yesterday.toString())
+        click("details_frequency_daily")
+        waitTag("details_recurrence_preview")
+        click("details_save"); closed()
+        val attached = repository.read(seeded.id)
+        assertEquals(seeded.id, attached.id)
+        assertEquals(yesterday, attached.slotDate)
+        val seriesId = requireNotNull(attached.seriesId)
+        ownedSeries.add(seriesId)
+        val repo = provider.getRecurrenceRepository()
+        assertEquals(2, provider.getDatabase().tasks().forSeries(seriesId).size)
+        assertEquals(0, repo.reconcile(seriesId))
+
+        openId(seeded.id)
+        compose.onNodeWithTag("details_series_status").assert(hasText("Enabled", substring = true))
+        compose.onNodeWithTag("details_scope_occurrence").assertIsSelected()
+        click("details_scope_series")
+        click("details_frequency_one_time")
+        click("details_save")
+        waitTag("confirm_pause")
+        click("confirm_pause"); closed()
+        assertFalse(repo.read(seriesId).template.enabled)
+        openId(seeded.id)
+        compose.onNodeWithTag("details_series_status").assert(hasText("Paused", substring = true))
+        click("details_resume"); waitTag("confirm_resume")
+        click("confirm_resume"); closed()
+        assertTrue(repo.read(seriesId).template.enabled)
+        openId(seeded.id)
+        click("details_delete_series"); click("delete_one_choice"); click("confirm_recurrence_delete"); closed()
+        assertThrows(NoSuchElementException::class.java) { repository.read(seeded.id) }
+        assertEquals(yesterday, repo.exclusions(seriesId).single().slotDate)
+        assertEquals(0, repo.reconcile(seriesId))
+        val remaining = provider.getDatabase().tasks().forSeries(seriesId).single()
+        openId(remaining.id)
+        click("details_delete_series"); click("delete_series_choice"); click("confirm_recurrence_delete"); closed()
+        assertThrows(NoSuchElementException::class.java) { repo.read(seriesId) }
+        assertTrue(provider.getDatabase().tasks().forSeries(seriesId).isEmpty())
+        ownedSeries.remove(seriesId)
     }
     @Test fun realAppKeyboardLongNoteThemeFontAndOrientation() {
         val oldScale=shell("settings get system font_scale")

@@ -25,6 +25,44 @@ class RecurrenceRepositoryTest {
     @After fun cleanup() { provider.close(); context.deleteDatabase(name) }
     private fun date(value: String) = LocalDate.parse(value)
 
+    @Test fun conversionKeepsOriginalIdentityAndRollsBackAsOneWrite() {
+        val clock = TestClock(date("2028-03-01"))
+        val db = provider.getDatabase()
+        val repo = RecurrenceRepository(db, clock)
+        val tasks = provider.getTaskRepository()
+        val children = provider.getSubtaskRepository()
+        val first = tasks.create(TaskContent("Water", scheduledDate = date("2028-02-28"), reminderTime = LocalTime.of(9, 0)))
+        val child = children.create(first.id, "Glass")
+        val spec = RecurrenceSpec(date("2028-02-28"), "daily", first.title, first.listId, first.priority,
+            first.shortNote, first.reminderTime, listOf(Prototype(0, child.text)))
+        val series = repo.convert(first.id, spec)
+        val attached = tasks.read(first.id)
+        assertEquals(first.id, attached.id)
+        assertEquals(first.createdAt, attached.createdAt)
+        assertEquals(first.scheduledDate, attached.scheduledDate)
+        assertEquals(first.reminderTime, attached.reminderTime)
+        assertEquals(first.listId, attached.listId)
+        assertEquals(child, children.read(child.id))
+        assertEquals(series.template.id, attached.seriesId)
+        assertEquals(first.scheduledDate, attached.slotDate)
+        assertEquals(1, attached.sourceRevision)
+        assertEquals(listOf(date("2028-02-28"), date("2028-02-29"), date("2028-03-01")),
+            db.tasks().forSeries(series.template.id).map { it.slotDate })
+        assertEquals(0, repo.reconcile(series.template.id))
+
+        val failed = tasks.create(TaskContent("Failure", scheduledDate = date("2028-03-01")))
+        db.openHelper.writableDatabase.execSQL("CREATE TRIGGER fail_convert BEFORE UPDATE ON tasks WHEN NEW.id = '${failed.id}' AND NEW.seriesId IS NOT NULL BEGIN SELECT RAISE(ABORT, 'conversion failure'); END")
+        try { assertThrows(android.database.sqlite.SQLiteException::class.java) {
+            repo.convert(failed.id, spec.copy(anchorDate = date("2028-03-01"), title = failed.title, reminderTime = null, checklist = emptyList()))
+        } } finally { db.openHelper.writableDatabase.execSQL("DROP TRIGGER fail_convert") }
+        assertEquals(failed, tasks.read(failed.id))
+        assertEquals(listOf(series.template.id), db.recurrence().ids())
+        provider.close()
+        val reopened = provider.getDatabase()
+        assertEquals(attached, provider.getTaskRepository().read(first.id))
+        assertEquals(3, reopened.tasks().forSeries(series.template.id).size)
+    }
+
     @Test fun metadataKnownSlotsReservationsInvalidsAndFailedCursorBatchPersist() {
         val clock = TestClock(date("2028-03-31"))
         val db = provider.getDatabase()
