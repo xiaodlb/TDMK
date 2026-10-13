@@ -33,3 +33,20 @@ After instrumentation (which cannot kill its own target process and continue), i
 All four processes were actually absent after force-stop and had new PIDs on relaunch. Dark/Light stayed selected despite opposite phone modes. Switching back to System followed current dark immediately, then live light, with System still selected before/after both restarts. [Machine-readable proof](evidence/task-15/process-restart.json) records values; screenshots show actual selections/contrast. Phone mode/font restored to light/1.0, app saved System; no app data/schema replacement. No checks repeated after these passes.
 
 Ignored local/device HTML/XML reports remain under app/build/reports and outputs/androidTest-results. Latest device XML is the targeted layout case; initial full40 output records other39 successes. Physical-phone/TalkBack comprehensive audit remains #37; no unrelated feature/background timing claim.
+
+## QA synchronization correction
+
+Independent [QA](https://github.com/xiaodlb/TDMK/issues/15#issuecomment-6137926755) passed criteria 1–4, 18 units, debug build, rendered layout checks, navigation and external process-restart/live-mode checks. The combined appearance case stalled in Espresso's main-thread idle loop after a global `cmd uimode night yes` configuration change. A bounded native diagnostic found the activity RESUMED/focused with the expected night configuration, but no accessible Settings labels in the instrumentation root. This establishes a test synchronization problem; no application defect was demonstrated.
+
+Global configuration assertions now run through the tracked [external device check](checks/appearance-system.ps1), outside Espresso. The existing Compose case retains manual choices, destination propagation, recreation, persisted System selection, injected SQL failure, visible error, unchanged Settings/lists, successful retry and reopened database assertions. All previous global-mode assertions remain covered by the external check.
+
+Fresh affected verification on emulator-5554 / API 36:
+
+```powershell
+.\gradlew.bat :app:testDebugUnitTest :app:assembleDebug :app:connectedDebugAndroidTest "-Pandroid.testInstrumentationRunnerArguments.class=com.xiaodlb.tdmk.AppearanceTest#overridesSystemObservationRecreationAndSafeFailedSave" --no-daemon --console=plain --offline
+& .\_docs\checks\appearance-system.ps1
+```
+
+The affected instrumentation case passed (1/1), including the formerly unreached error/retry assertions. Gradle succeeded in 45 seconds; 77 tasks, 6 executed/71 up-to-date. Unit/debug tasks were up-to-date; production source did not change and independent QA had freshly passed all 18 units/debug. The external check passed all eight selected-row/rendered-surface assertions: Dark on light/dark phone, Light on dark/light/dark phone, System immediately dark then live light/dark. [Result values](evidence/task-15/configuration-fix.json); local screenshots/XML remain in `.tools/appearance-system-results`. Device mode/font were restored to light/1.0 and saved appearance to System.
+
+During diagnosis the device disappeared from adb and both emulator processes exited; the same existing AVD was relaunched only after confirming that process loss. Final checks used the live boot-complete device without further restarts. Earlier passing rendering/navigation/storage/process-restart checks were not repeated. No app behavior, acceptance criteria, schema or dependencies changed.

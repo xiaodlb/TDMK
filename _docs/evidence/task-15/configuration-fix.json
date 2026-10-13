@@ -1,0 +1,50 @@
+[
+  {
+    "choice": "Dark",
+    "screenshot": "dark-device-light.png",
+    "surface": "14171A",
+    "resolved": "dark"
+  },
+  {
+    "choice": "Dark",
+    "screenshot": "dark-device-dark.png",
+    "surface": "14171A",
+    "resolved": "dark"
+  },
+  {
+    "choice": "Light",
+    "screenshot": "light-device-dark.png",
+    "surface": "FAFAF9",
+    "resolved": "light"
+  },
+  {
+    "choice": "Light",
+    "screenshot": "light-device-light.png",
+    "surface": "FAFAF9",
+    "resolved": "light"
+  },
+  {
+    "choice": "Light",
+    "screenshot": "light-device-dark-again.png",
+    "surface": "FAFAF9",
+    "resolved": "light"
+  },
+  {
+    "choice": "System",
+    "screenshot": "system-immediate-dark.png",
+    "surface": "14171A",
+    "resolved": "dark"
+  },
+  {
+    "choice": "System",
+    "screenshot": "system-live-light.png",
+    "surface": "FAFAF9",
+    "resolved": "light"
+  },
+  {
+    "choice": "System",
+    "screenshot": "system-live-dark.png",
+    "surface": "14171A",
+    "resolved": "dark"
+  }
+]

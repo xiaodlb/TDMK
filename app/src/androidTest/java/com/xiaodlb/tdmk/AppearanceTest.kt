@@ -60,13 +60,9 @@ class AppearanceTest {
         for(name in listOf("Home","Tasks","Notes","Log")) { compose.onNodeWithTag("tab_$name").performClick(); theme(true); compose.onNodeWithTag("screen_$name").assertIsDisplayed() }
         compose.onNodeWithTag("tab_Home").performClick(); compose.onNodeWithTag("open_settings").performClick()
         compose.activityRule.scenario.recreate(); selected(Appearance.DARK); theme(true)
-        shell("cmd uimode night yes"); selected(Appearance.DARK); theme(true)
+        // Global device configuration assertions run in _docs/checks/appearance-system.ps1 outside Espresso.
         choose(Appearance.LIGHT); theme(false); compose.activityRule.scenario.recreate(); selected(Appearance.LIGHT); theme(false)
-        shell("cmd uimode night no"); selected(Appearance.LIGHT); theme(false)
-        shell("cmd uimode night yes"); selected(Appearance.LIGHT); theme(false)
-        choose(Appearance.SYSTEM); theme(true); assertEquals(Appearance.SYSTEM,provider.getDatabase().settings().read().appearance)
-        shell("cmd uimode night no"); selected(Appearance.SYSTEM); theme(false)
-        shell("cmd uimode night yes"); selected(Appearance.SYSTEM); theme(true)
+        choose(Appearance.SYSTEM); theme(false); assertEquals(Appearance.SYSTEM,provider.getDatabase().settings().read().appearance)
         choose(Appearance.LIGHT); theme(false)
         val listsBefore=provider.getListRepository().readAll(); val settingBefore=provider.getDatabase().settings().read()
         provider.getDatabase().openHelper.writableDatabase.execSQL("CREATE TRIGGER fail_appearance BEFORE UPDATE ON settings BEGIN SELECT RAISE(ABORT,'injected appearance write failure'); END")
