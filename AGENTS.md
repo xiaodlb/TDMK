@@ -7,7 +7,7 @@ TDMK is a personal Android task planner with separate notes. The agreed stack is
 - Read `_docs/plan.md` before changing product behavior.
 - `_docs/tasks.md` maps the implementation backlog to GitHub issues in https://github.com/xiaodlb/TDMK.
 - Work on one GitHub issue at a time, following `_docs/process.md`. Read its acceptance criteria, goal, description, and prerequisites before starting, and re-read the acceptance criteria before closing. Numbered task references use the original backlog numbers.
-- Read `_docs/behavior.md` and `_docs/data-model.md` when present. These files are planned deliverables and may not exist yet.
+- Read [`_docs/behavior.md`](_docs/behavior.md) and [`_docs/data-model.md`](_docs/data-model.md) before changing domain rules or persistence.
 - Current user instructions take precedence over this file. Do not treat an undecided detail as an agreed requirement.
 
 ## Documents
@@ -16,10 +16,12 @@ Keep project guidance together in `_docs/` and add references here when new guid
 
 - [`_docs/process.md`](_docs/process.md) - how work is organized. Read before starting work.
 - [`_docs/design-system.md`](_docs/design-system.md) - implemented shared theme, tokens and shell/control rules.
-- Before writing tests, read `_docs/testing-guidelines.md` when present.
-- For anything touching the UI, read `_docs/design-system.md` when present.
+- [`_docs/testing-guidelines.md`](_docs/testing-guidelines.md) - commands, evidence and deterministic date/device checks. Read before writing tests.
+- [`_docs/api.md`](_docs/api.md) - implemented local Kotlin/Room contracts. Read before changing storage interfaces.
+- [`chat-brainstrom.md`](chat-brainstrom.md) - authentic brainstorming and related primary chat history with a fixed export cutoff and source inventory.
+- For anything touching the UI, read `_docs/design-system.md`.
 
-The testing guide is still planned; the implemented design foundation is linked above. If a referenced guide is missing, report that briefly and use the existing scope and development instructions; do not claim to have read it. If `_docs/api.md` is introduced, link it here as the API contract; no cloud API is included in the current first-version scope.
+If a referenced guide is missing, report that briefly and use the existing scope and development instructions; do not claim to have read it. The API guide describes implemented local interfaces; no cloud API is included in the current first-version scope.
 
 ## Scope and behavior
 
