@@ -12,6 +12,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.window.DialogWindowProvider
 import androidx.core.view.WindowCompat
 import androidx.compose.ui.platform.testTag
@@ -24,12 +26,14 @@ import com.xiaodlb.tdmk.data.DatabaseProvider
 fun TaskDetailsSheet(model: TaskDetailsModel, provider: DatabaseProvider) {
     val id = model.selectedId ?: return
     val pending by rememberUpdatedState(model.pending)
-    val maximumHeight = (LocalConfiguration.current.screenHeightDp - 64).coerceAtLeast(96).dp
+    val maximumContentHeight = (LocalConfiguration.current.screenHeightDp - 96).coerceAtLeast(96).dp
     val sheet = rememberModalBottomSheetState(skipPartiallyExpanded = true, confirmValueChange = { it != SheetValue.Hidden || !pending })
     ModalBottomSheet(onDismissRequest = model::dismiss, sheetState = sheet,
         properties = ModalBottomSheetProperties(shouldDismissOnBackPress = !model.pending),
         containerColor = MaterialTheme.colorScheme.surface,
-        modifier = Modifier.heightIn(max = maximumHeight).testTag("task_details")) {
+        contentWindowInsets = { WindowInsets(0, 0, 0, 0) },
+        dragHandle = { BottomSheetDefaults.DragHandle(modifier = Modifier.testTag("details_handle")) },
+        modifier = Modifier.testTag("task_details")) {
         val view = LocalView.current
         val dark = MaterialTheme.colorScheme.background.luminance() < 0.5f
         LaunchedEffect(view, dark) {
@@ -37,7 +41,7 @@ fun TaskDetailsSheet(model: TaskDetailsModel, provider: DatabaseProvider) {
                 WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !dark
             }
         }
-        Column(Modifier.fillMaxWidth().imePadding().verticalScroll(rememberScrollState())
+        Column(Modifier.fillMaxWidth().heightIn(max = maximumContentHeight).navigationBarsPadding().imePadding().verticalScroll(rememberScrollState())
             .padding(horizontal = ShellSpacing.page).padding(bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(ShellSpacing.gap)) {
             Text("Task details", style = MaterialTheme.typography.titleLarge, modifier = Modifier.semantics { heading() })
             if(model.loading) CircularProgressIndicator(Modifier.testTag("details_loading"))
@@ -100,6 +104,8 @@ fun TaskDetailsSheet(model: TaskDetailsModel, provider: DatabaseProvider) {
 
 @Composable
 private fun ChecklistEditor(model: TaskDetailsModel) {
+    val focus = LocalFocusManager.current
+    val keyboard = LocalSoftwareKeyboardController.current
     Text("Checklist", style = MaterialTheme.typography.titleMedium, modifier = Modifier.semantics { heading() })
     Text("Changes, including confirmed deletions, apply when you Save.", style = MaterialTheme.typography.bodyMedium)
     model.children.forEachIndexed { index, child ->
@@ -115,7 +121,7 @@ private fun ChecklistEditor(model: TaskDetailsModel) {
                         verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
                         Checkbox(child.checked, null, enabled = !model.pending); Text("Done")
                     }
-                    TextButton(onClick = { model.askDelete(child) }, enabled = !model.pending,
+                    TextButton(onClick = { focus.clearFocus(); keyboard?.hide(); model.askDelete(child) }, enabled = !model.pending,
                         modifier = Modifier.heightIn(min = 48.dp).testTag("child_delete_${child.key}")
                             .semantics { contentDescription = "Delete checklist item ${index + 1}: ${child.text}" }) { Text("Delete") }
                 }

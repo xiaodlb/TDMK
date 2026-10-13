@@ -30,6 +30,12 @@ class TaskChecklistTest {
     private fun closed() { compose.waitUntil(10_000) { compose.onAllNodesWithTag("task_details").fetchSemanticsNodes().isEmpty() && compose.activity.hasWindowFocus() } }
     private fun add(text:String) { edit("new_child_text",text); click("add_child") }
     private fun draft()=ViewModelProvider(compose.activity)[TaskDetailsModel::class.java]
+    private fun capture(name:String) {
+        compose.waitForIdle()
+        val file=File(compose.activity.getExternalFilesDir(null),"$name.png")
+        InstrumentationRegistry.getInstrumentation().uiAutomation.takeScreenshot()!!.let { bitmap -> file.outputStream().use { bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG,100,it) }; bitmap.recycle() }
+        shell("mkdir -p /sdcard/Download/tdmk-task18"); shell("cp ${file.absolutePath} /sdcard/Download/tdmk-task18/${file.name}")
+    }
     @Before fun setup() {
         oldKeyboard=shell("settings get secure show_ime_with_hard_keyboard"); shell("settings put secure show_ime_with_hard_keyboard 1")
         parent=tasks.create(TaskContent("Checklist ${UUID.randomUUID()}")); ids.add(parent.id)
@@ -101,12 +107,16 @@ class TaskChecklistTest {
         shell("input keyevent 4"); compose.waitUntil(10_000) { !shell("dumpsys input_method").contains("mInputShown=true") }
         assertEquals("Back draft",draft().children.single().text); compose.onNodeWithTag("task_details").assertExists()
         shell("input keyevent 4"); closed(); assertEquals(child,subs.read(child.id))
-        open(); edit("child_text_${child.id}","Outside draft"); shell("input keyevent 4")
+        open(); edit("child_text_${child.id}","Outside draft"); click("child_text_${child.id}")
+        compose.waitUntil(10_000) { shell("dumpsys input_method").contains("mInputShown=true") }; shell("input keyevent 4")
         compose.waitUntil(10_000) { !shell("dumpsys input_method").contains("mInputShown=true") }; android.os.SystemClock.sleep(700)
-        shell("input tap ${compose.activity.resources.displayMetrics.widthPixels/2} ${(48*compose.activity.resources.displayMetrics.density).toInt()}"); closed(); assertEquals(child,subs.read(child.id))
-        open(); edit("child_text_${child.id}","Swipe draft"); shell("input keyevent 4")
+        val sheetBounds=compose.onNodeWithTag("details_handle",useUnmergedTree=true).fetchSemanticsNode().boundsInRoot
+        android.util.Log.i("TDMKGeometry", "Outside touch above sheet: $sheetBounds")
+        compose.onNodeWithTag("details_handle",useUnmergedTree=true).performTouchInput { click(androidx.compose.ui.geometry.Offset(centerX,-8*compose.activity.resources.displayMetrics.density)) }; closed(); assertEquals(child,subs.read(child.id))
+        open(); edit("child_text_${child.id}","Swipe draft"); click("child_text_${child.id}")
+        compose.waitUntil(10_000) { shell("dumpsys input_method").contains("mInputShown=true") }; shell("input keyevent 4")
         compose.waitUntil(10_000) { !shell("dumpsys input_method").contains("mInputShown=true") }
-        compose.onNodeWithTag("task_details").performTouchInput { swipeDown(startY=20f,endY=height.toFloat()-20f,durationMillis=500) }; closed(); assertEquals(child,subs.read(child.id))
+        compose.onNodeWithTag("details_handle",useUnmergedTree=true).performTouchInput { swipeDown(startY=height/2f,endY=height+500*compose.activity.resources.displayMetrics.density,durationMillis=500) }; closed(); assertEquals(child,subs.read(child.id))
     }
     @Test fun keyboardChecklistThemeFontOrientationMatrix() {
         val oldScale=shell("settings get system font_scale"); val oldOrientation=compose.activity.requestedOrientation
@@ -125,16 +135,24 @@ class TaskChecklistTest {
                         click("child_text_${child.id}"); compose.waitUntil(10_000) { shell("dumpsys input_method").contains("mInputShown=true") }
                         for(tag in listOf("details_note","child_text_${child.id}","child_check_${child.id}","child_delete_${child.id}","new_child_text","add_child","details_save","details_cancel")) compose.onNodeWithTag(tag).performScrollTo().assertIsDisplayed()
                         compose.onNodeWithTag("child_check_${child.id}").assertIsOff()
-                        click("child_delete_${child.id}"); waitTag("confirm_child_delete"); compose.onNodeWithTag("confirm_child_delete").assertIsDisplayed(); click("cancel_child_delete")
+                        if(scale=="1.0" && label=="portrait" && mode==Appearance.LIGHT) {
+                            compose.onNodeWithTag("child_delete_${child.id}").performScrollTo(); capture("checklist-controls")
+                        }
+                        click("child_delete_${child.id}"); waitTag("confirm_child_delete"); compose.onNodeWithTag("confirm_child_delete").assertIsDisplayed()
+                        if(scale=="1.0" && label=="portrait" && mode==Appearance.LIGHT) capture("checklist-confirmation")
+                        click("cancel_child_delete")
                         click("new_child_text"); compose.onNodeWithTag("details_save").performScrollTo().assertIsDisplayed(); compose.onNodeWithTag("details_cancel").assertIsDisplayed(); android.os.SystemClock.sleep(700)
-                        val automation=InstrumentationRegistry.getInstrumentation().uiAutomation
-                        val file=File(compose.activity.getExternalFilesDir(null),"checklist-${mode.storedValue}-$label-font$scale.png")
-                        automation.takeScreenshot()!!.let { bitmap -> file.outputStream().use { bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG,100,it) }; bitmap.recycle() }
-                        shell("mkdir -p /sdcard/Download/tdmk-task18"); shell("cp ${file.absolutePath} /sdcard/Download/tdmk-task18/${file.name}")
+                        capture("checklist-${mode.storedValue}-$label-font$scale")
                     }
                 }
             }
-        } finally { shell("settings put system font_scale $oldScale"); compose.activityRule.scenario.onActivity { it.requestedOrientation=oldOrientation }; provider.getDatabase().settings().setAppearance(oldAppearance) }
-        click("details_cancel"); closed(); assertEquals(12,subs.readForParent(parent.id).size)
+            shell("input keyevent 4"); compose.waitUntil(10_000) { !shell("dumpsys input_method").contains("mInputShown=true") }
+            click("details_cancel"); closed(); assertEquals(12,subs.readForParent(parent.id).size)
+        } finally {
+            // Release the focused modal window before restoring font/orientation on the host.
+            compose.activityRule.scenario.onActivity { ViewModelProvider(it)[TaskDetailsModel::class.java].dismiss() }
+            shell("settings put system font_scale $oldScale"); compose.activityRule.scenario.onActivity { it.requestedOrientation=oldOrientation }
+            provider.getDatabase().settings().setAppearance(oldAppearance)
+        }
     }
 }

@@ -72,14 +72,16 @@ class TaskDetailsTest {
         compose.waitUntil(10_000) { !shell("dumpsys input_method").contains("mInputShown=true") }
         compose.onNodeWithTag("task_details").assertExists(); text("details_title","Back draft")
         shell("input keyevent 4"); closed(); assertEquals(saved,repository.read(seeded.id))
-        open(); edit("details_title","Outside draft"); shell("input keyevent 4")
+        open(); edit("details_title","Outside draft"); click("details_title")
+        compose.waitUntil(10_000) { shell("dumpsys input_method").contains("mInputShown=true") }; shell("input keyevent 4")
         compose.waitUntil(10_000) { !shell("dumpsys input_method").contains("mInputShown=true") }
         android.os.SystemClock.sleep(700)
         val density=compose.activity.resources.displayMetrics.density
-        shell("input tap ${compose.activity.resources.displayMetrics.widthPixels/2} ${(48*density).toInt()}"); closed(); assertEquals(saved,repository.read(seeded.id))
-        open(); edit("details_title","Swipe draft"); shell("input keyevent 4")
+        compose.onNodeWithTag("details_handle",useUnmergedTree=true).performTouchInput { click(androidx.compose.ui.geometry.Offset(centerX,-8*density)) }; closed(); assertEquals(saved,repository.read(seeded.id))
+        open(); edit("details_title","Swipe draft"); click("details_title")
+        compose.waitUntil(10_000) { shell("dumpsys input_method").contains("mInputShown=true") }; shell("input keyevent 4")
         compose.waitUntil(10_000) { !shell("dumpsys input_method").contains("mInputShown=true") }
-        compose.onNodeWithTag("task_details").performTouchInput { swipeDown(startY=20f,endY=height.toFloat()-20f,durationMillis=500) }
+        compose.onNodeWithTag("details_handle",useUnmergedTree=true).performTouchInput { swipeDown(startY=height/2f,endY=height+500*density,durationMillis=500) }
         closed(); assertEquals(saved,repository.read(seeded.id))
         compose.activityRule.scenario.recreate(); waitTag("details_${seeded.id}"); open(); text("details_note","New plain note"); click("details_cancel"); closed()
         val reopened=DatabaseProvider(compose.activity,"tdmk.db")
