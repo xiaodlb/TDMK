@@ -7,6 +7,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.*
@@ -16,7 +17,7 @@ import androidx.compose.ui.unit.dp
 import com.xiaodlb.tdmk.data.Task
 
 @Composable
-fun TaskRow(task: Task, listName: String, pending: Boolean, error: String?, onCompletion: (String) -> Unit, onDetails: (String) -> Unit) {
+fun TaskRow(task: Task, listName: String, pending: Boolean, error: String?, onCompletion: (String) -> Unit, onDetails: (String) -> Unit, detailsModifier: Modifier = Modifier) {
     val completed = task.completedAt != null
     Surface(shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.surfaceContainerLow,
         modifier = Modifier.fillMaxWidth().testTag("task_${task.id}")) {
@@ -26,7 +27,7 @@ fun TaskRow(task: Task, listName: String, pending: Boolean, error: String?, onCo
                     modifier = Modifier.padding(top = 4.dp).testTag("complete_${task.id}").semantics {
                         contentDescription = if (completed) "Reopen ${task.title}" else "Complete ${task.title}"
                     })
-                Column(Modifier.weight(1f).clickable(enabled = !pending, onClickLabel = "Open task details") { onDetails(task.id) }
+                Column(detailsModifier.focusProperties { canFocus = true }.weight(1f).clickable(enabled = !pending, onClickLabel = "Open task details") { onDetails(task.id) }
                     .testTag("details_${task.id}").semantics(mergeDescendants = true) {
                         stateDescription = if (completed) "Completed" else "Not completed"
                     }.padding(vertical = 16.dp, horizontal = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {

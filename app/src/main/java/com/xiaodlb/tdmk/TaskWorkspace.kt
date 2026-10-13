@@ -1,6 +1,9 @@
 package com.xiaodlb.tdmk
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.focusable
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -20,9 +23,12 @@ import java.time.LocalDate
 
 /** Reusable real-storage host; outer shell supplies scrolling and safe/IME insets. */
 @Composable
-fun TaskWorkspace(provider: DatabaseProvider, context: TaskContext = TaskContext.Anytime, clock: Clock = Clock.systemDefaultZone(), onDetails: (String) -> Unit) {
+fun TaskWorkspace(provider: DatabaseProvider, context: TaskContext = TaskContext.Anytime, clock: Clock = Clock.systemDefaultZone(), returnFocusId: String? = null, onFocusReturned: () -> Unit = {}, onDetails: (String) -> Unit) {
     val scope = rememberCoroutineScope()
     val keyboard = LocalSoftwareKeyboardController.current
+    val view = androidx.compose.ui.platform.LocalView.current
+    val rowFocus = remember { mutableMapOf<String, FocusRequester>() }
+    val hostFocus = remember { FocusRequester() }
     var candidates by remember { mutableStateOf<List<Task>>(emptyList()) }
     var lists by remember { mutableStateOf<List<TaskList>>(emptyList()) }
     var loaded by remember { mutableStateOf(false) }
@@ -35,6 +41,15 @@ fun TaskWorkspace(provider: DatabaseProvider, context: TaskContext = TaskContext
     var pendingIds by remember { mutableStateOf<Set<String>>(emptySet()) }
     var rowErrors by remember { mutableStateOf<Map<String,String>>(emptyMap()) }
     var today by remember { mutableStateOf(LocalDate.now(clock)) }
+    LaunchedEffect(returnFocusId) {
+        if(returnFocusId != null) {
+            // The modal owns a separate Android window; wait until the host owns focus again.
+            withTimeoutOrNull(2_000) { while(!view.hasWindowFocus()) delay(16) }
+            val visible = context.results(candidates, clock).any { it.id == returnFocusId }
+            (if(visible) rowFocus[returnFocusId] ?: hostFocus else hostFocus).requestFocus()
+            onFocusReturned()
+        }
+    }
     val owner = LocalContext.current as? LifecycleOwner
     DisposableEffect(owner, clock) {
         val observer = LifecycleEventObserver { _, event -> if(event == Lifecycle.Event.ON_RESUME) today = LocalDate.now(clock) }
@@ -76,7 +91,7 @@ fun TaskWorkspace(provider: DatabaseProvider, context: TaskContext = TaskContext
             { draft = ""; entryError = null; savedMessage = null; keyboard?.hide() })
         savedMessage?.let { Text(it, Modifier.testTag("entry_success").semantics { liveRegion = LiveRegionMode.Polite }, style = MaterialTheme.typography.bodyMedium) }
         Text(when(context) { TaskContext.Anytime -> "Anytime"; TaskContext.Today -> "Today"; TaskContext.Home -> "Overdue and today"; is TaskContext.InList -> lists.firstOrNull { it.id == context.id }?.name ?: "List" },
-            style = MaterialTheme.typography.titleMedium, modifier = Modifier.semantics { heading() })
+            style = MaterialTheme.typography.titleMedium, modifier = Modifier.focusRequester(hostFocus).focusable().semantics { heading() })
         val results = remember(candidates, context, today) { context.results(candidates, Clock.fixed(today.atStartOfDay(clock.zone).toInstant(), clock.zone)) }
         if(results.isEmpty()) Text("No tasks here yet.", color = MaterialTheme.colorScheme.onSurfaceVariant)
         results.forEach { task -> key(task.id) {
@@ -92,7 +107,7 @@ fun TaskWorkspace(provider: DatabaseProvider, context: TaskContext = TaskContext
                         finally { pendingIds = pendingIds - id }
                     }
                 }
-            }, onDetails)
+            }, onDetails, Modifier.focusRequester(rowFocus.getOrPut(task.id) { FocusRequester() }))
         } }
     }
 }

@@ -21,6 +21,7 @@ private data class AppearanceState(val saved: Appearance? = null, val pending: B
 class MainActivity : ComponentActivity() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private var appearance by mutableStateOf(AppearanceState())
+    private val details by lazy { androidx.lifecycle.ViewModelProvider(this)[TaskDetailsModel::class.java] }
     private val provider get() = (application as TdmkApplication).databaseProvider
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -40,7 +41,7 @@ class MainActivity : ComponentActivity() {
             AppTheme(dark) {
                 Surface(Modifier.fillMaxSize().testTag(if (dark) "theme_dark" else "theme_light")) {
                     if (state.saved != null) NavigationShell(state.saved, !state.pending, state.error, ::saveAppearance) {
-                        TaskWorkspace(provider, onDetails = { id -> requestTaskDetails(id) })
+                        TaskWorkspace(provider, returnFocusId = details.returnFocusId, onFocusReturned = details::focusReturned, onDetails = { id -> requestTaskDetails(id) })
                     }
                     else Column(Modifier.safeDrawingPadding().padding(ShellSpacing.page), horizontalAlignment = Alignment.CenterHorizontally) {
                         if (state.error) {
@@ -48,6 +49,7 @@ class MainActivity : ComponentActivity() {
                             Button(onClick = ::observeAppearance) { Text(stringResource(R.string.retry)) }
                         } else CircularProgressIndicator(Modifier.testTag("appearance_loading"))
                     }
+                    if (details.selectedId != null) TaskDetailsSheet(details, provider)
                 }
             }
         }
@@ -76,12 +78,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    // #17 will consume this stable-ID request to open the editor.
-    private var requestedTaskDetailsId: String? = null
-    private fun requestTaskDetails(id: String) {
-        requestedTaskDetailsId = id
-        android.widget.Toast.makeText(this, "Task details are coming soon.", android.widget.Toast.LENGTH_SHORT).show()
-    }
+    private fun requestTaskDetails(id: String) { details.open(id, provider) }
 
     override fun onDestroy() { scope.cancel(); super.onDestroy() }
 }
