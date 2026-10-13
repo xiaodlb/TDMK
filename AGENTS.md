@@ -19,7 +19,7 @@ Keep project guidance together in `_docs/` and add references here when new guid
 - Before writing tests, read `_docs/testing-guidelines.md` when present.
 - For anything touching the UI, read `_docs/design-system.md` when present.
 
-The testing and design guides are planned files and may not exist yet. If a referenced guide is missing, report that briefly and use the existing scope and development instructions; do not claim to have read it. If `_docs/api.md` is introduced, link it here as the API contract; no cloud API is included in the current first-version scope.
+The testing guide is still planned; the implemented design foundation is linked above. If a referenced guide is missing, report that briefly and use the existing scope and development instructions; do not claim to have read it. If `_docs/api.md` is introduced, link it here as the API contract; no cloud API is included in the current first-version scope.
 
 ## Scope and behavior
 

@@ -12,6 +12,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.*
 import org.junit.Rule
+import org.junit.Before
 import org.junit.Test
 import java.io.File
 
@@ -19,7 +20,10 @@ class NavigationShellTest {
     @get:Rule val compose = createAndroidComposeRule<MainActivity>()
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private val tabs = listOf("Home", "Tasks", "Notes", "Log")
+    @Before fun awaitAppearanceLoad() { compose.waitUntil(10_000) { compose.onAllNodesWithTag("screen_Home").fetchSemanticsNodes().isNotEmpty() } }
+    private fun awaitShell() { compose.waitUntil(10_000) { compose.onAllNodesWithTag("tab_Home").fetchSemanticsNodes().isNotEmpty() } }
     private fun show(route: String) {
+        awaitShell()
         compose.onNodeWithTag("screen_$route").assertIsDisplayed()
         (tabs + "Settings").filter { it != route }.forEach { compose.onNodeWithTag("screen_$it").assertDoesNotExist() }
         val selected = if (route == "Settings") "Home" else route
@@ -85,6 +89,7 @@ class NavigationShellTest {
                     compose.activityRule.scenario.onActivity { it.requestedOrientation = orientation }
                     val configuration = if (label == "portrait") Configuration.ORIENTATION_PORTRAIT else Configuration.ORIENTATION_LANDSCAPE
                     compose.waitUntil(10_000) { compose.activity.resources.configuration.orientation == configuration && compose.activity.resources.configuration.fontScale == scale.toFloat() }
+                    awaitShell()
                     compose.onNodeWithTag("tab_Home").performClick(); show("Home")
                     screenshot("home-$label-font$scale")
                     val density = compose.activity.resources.displayMetrics.density

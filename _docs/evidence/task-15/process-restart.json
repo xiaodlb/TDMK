@@ -1,0 +1,40 @@
+[
+  {
+    "screenshot": "fresh-system-light.png",
+    "resolved": "light",
+    "surface": "FAFAF9",
+    "choice": "System"
+  },
+  {
+    "choice": "Dark",
+    "afterPid": "10070",
+    "surface": "14171A",
+    "resolved": "dark",
+    "screenshot": "manual-dark-restart.png",
+    "beforePid": "9930"
+  },
+  {
+    "choice": "Light",
+    "afterPid": "10241",
+    "surface": "FAFAF9",
+    "resolved": "light",
+    "screenshot": "manual-light-restart.png",
+    "beforePid": "10070"
+  },
+  {
+    "choice": "System",
+    "afterPid": "10377",
+    "surface": "14171A",
+    "resolved": "dark",
+    "screenshot": "system-dark-restart.png",
+    "beforePid": "10241"
+  },
+  {
+    "choice": "System",
+    "afterPid": "10504",
+    "surface": "FAFAF9",
+    "resolved": "light",
+    "screenshot": "system-light-restart.png",
+    "beforePid": "10377"
+  }
+]
