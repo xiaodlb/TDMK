@@ -1,0 +1,9 @@
+{
+  "api": 36,
+  "afterPid": "4733",
+  "beforePid": "4689",
+  "save": "\ncom.xiaodlb.tdmk.TaskDetailsRestartTest:.\n\nTime: 7.08\n\nOK (1 test)\n\n",
+  "device": "emulator-5554",
+  "airplaneMode": 1,
+  "verify": "\ncom.xiaodlb.tdmk.TaskDetailsRestartTest:.\n\nTime: 4.953\n\nOK (1 test)\n\n"
+}
