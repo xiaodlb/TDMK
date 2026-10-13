@@ -57,10 +57,24 @@ class RecurrenceRepositoryTest {
         } } finally { db.openHelper.writableDatabase.execSQL("DROP TRIGGER fail_convert") }
         assertEquals(failed, tasks.read(failed.id))
         assertEquals(listOf(series.template.id), db.recurrence().ids())
+        val monthClock = TestClock(date("2028-01-30"))
+        val futureRepo = RecurrenceRepository(db, monthClock)
+        val future = tasks.create(TaskContent("Monthly", scheduledDate = date("2028-01-31")))
+        val monthly = futureRepo.convert(future.id, RecurrenceSpec(date("2028-01-31"), "monthly", future.title, future.listId))
+        assertEquals(listOf(date("2028-01-31")), db.tasks().forSeries(monthly.template.id).map { it.slotDate })
+        monthClock.day = date("2028-02-29")
+        assertEquals(1, futureRepo.reconcile(monthly.template.id))
+        assertEquals(listOf(date("2028-01-31"), date("2028-02-29")), db.tasks().forSeries(monthly.template.id).map { it.slotDate })
+        monthClock.day = date("2028-03-31")
+        assertEquals(1, futureRepo.reconcile(monthly.template.id))
+        assertEquals(listOf(date("2028-01-31"), date("2028-02-29"), date("2028-03-31")),
+            db.tasks().forSeries(monthly.template.id).map { it.slotDate })
+        assertEquals(date("2028-01-31"), futureRepo.read(monthly.template.id).revisions.single().revision.anchorDate)
         provider.close()
         val reopened = provider.getDatabase()
         assertEquals(attached, provider.getTaskRepository().read(first.id))
         assertEquals(3, reopened.tasks().forSeries(series.template.id).size)
+        assertEquals(3, reopened.tasks().forSeries(monthly.template.id).size)
     }
 
     @Test fun metadataKnownSlotsReservationsInvalidsAndFailedCursorBatchPersist() {

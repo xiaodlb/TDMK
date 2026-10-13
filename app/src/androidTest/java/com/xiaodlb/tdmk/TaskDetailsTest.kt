@@ -158,6 +158,81 @@ class TaskDetailsTest {
         assertTrue(provider.getDatabase().tasks().forSeries(seriesId).isEmpty())
         ownedSeries.remove(seriesId)
     }
+    @Test fun historicalSeriesEditAndOccurrenceOverrideKeepProvenance() {
+        val today = LocalDate.now()
+        val repo = provider.getRecurrenceRepository()
+        val series = repo.create(RecurrenceSpec(today.minusDays(2), "daily", "History", seeded.listId))
+        ownedSeries.add(series.template.id)
+        assertEquals(3, repo.reconcile(series.template.id))
+        val slots = provider.getDatabase().tasks().forSeries(series.template.id)
+        val old = repository.complete(slots[0].id)
+        val current = slots.last()
+        openId(old.id)
+        click("details_scope_series")
+        edit("details_title", "Changed template")
+        click("details_save"); closed()
+        assertEquals(old, repository.read(old.id))
+        val updated = repository.read(current.id)
+        assertEquals("Changed template", updated.title)
+        assertEquals(current.id, updated.id)
+        assertEquals(2, updated.sourceRevision)
+        assertFalse(updated.isOverride)
+        assertEquals(3, provider.getDatabase().tasks().forSeries(series.template.id).size)
+
+        openId(current.id)
+        edit("details_date", today.plusDays(1).toString())
+        edit("details_title", "Moved only")
+        click("details_save"); closed()
+        val moved = repository.read(current.id)
+        assertEquals(today, moved.slotDate)
+        assertEquals(today.plusDays(1), moved.scheduledDate)
+        assertTrue(moved.isOverride)
+        assertEquals("Changed template", repo.read(series.template.id).revisions.last().revision.title)
+        assertEquals(0, repo.reconcile(series.template.id))
+        assertEquals(3, provider.getDatabase().tasks().forSeries(series.template.id).size)
+
+        openId(old.id)
+        click("details_scope_series")
+        edit("details_title", "Failed edit")
+        provider.getDatabase().openHelper.writableDatabase.execSQL("CREATE TRIGGER fail_details BEFORE INSERT ON template_revisions BEGIN SELECT RAISE(ABORT,'series edit failure'); END")
+        click("details_save"); waitTag("details_error")
+        text("details_title", "Failed edit")
+        assertEquals(2, repo.read(series.template.id).revisions.size)
+        assertEquals(moved, repository.read(current.id))
+        provider.getDatabase().openHelper.writableDatabase.execSQL("DROP TRIGGER fail_details")
+        click("details_cancel"); closed()
+    }
+    @Test fun recurrenceControlsRemainReachableWithKeyboardThemesAndLargeText() {
+        val oldScale = shell("settings get system font_scale")
+        val series = provider.getRecurrenceRepository().create(RecurrenceSpec(LocalDate.now(), "daily", "Visual series", seeded.listId))
+        ownedSeries.add(series.template.id)
+        val occurrence = provider.getDatabase().tasks().forSeries(series.template.id).firstOrNull()
+            ?: run { provider.getRecurrenceRepository().reconcile(series.template.id); provider.getDatabase().tasks().forSeries(series.template.id).single() }
+        try {
+            shell("settings put system font_scale 2.0")
+            for(mode in listOf(Appearance.LIGHT, Appearance.DARK)) {
+                provider.getDatabase().settings().setAppearance(mode)
+                compose.waitUntil(10_000) { compose.onAllNodesWithTag(if(mode == Appearance.LIGHT) "theme_light" else "theme_dark").fetchSemanticsNodes().isNotEmpty() }
+                openId(occurrence.id)
+                click("details_scope_series")
+                click("details_frequency_monthly")
+                compose.onNodeWithTag("details_recurrence_preview").performScrollTo().assertIsDisplayed()
+                click("details_note")
+                compose.waitUntil(10_000) { shell("dumpsys input_method").contains("mInputShown=true") }
+                compose.onNodeWithTag("details_recurrence_preview").performScrollTo().assertIsDisplayed()
+                val folder = File(compose.activity.getExternalFilesDir(null), "task19").apply { mkdirs() }
+                val controlsBitmap = requireNotNull(instrumentation.uiAutomation.takeScreenshot())
+                File(folder, "controls-${mode.storedValue}-font2.png").outputStream().use { assertTrue(controlsBitmap.compress(Bitmap.CompressFormat.PNG, 100, it)) }
+                controlsBitmap.recycle()
+                for(tag in listOf("details_scope_occurrence", "details_scope_series", "details_frequency_one_time", "details_frequency_daily", "details_frequency_weekly", "details_frequency_monthly", "details_recurrence_preview", "details_save", "details_cancel"))
+                    compose.onNodeWithTag(tag).performScrollTo().assertIsDisplayed()
+                val bitmap = requireNotNull(instrumentation.uiAutomation.takeScreenshot())
+                File(folder, "recurrence-${mode.storedValue}-font2.png").outputStream().use { assertTrue(bitmap.compress(Bitmap.CompressFormat.PNG, 100, it)) }
+                bitmap.recycle()
+                click("details_cancel"); closed()
+            }
+        } finally { shell("settings put system font_scale $oldScale") }
+    }
     @Test fun realAppKeyboardLongNoteThemeFontAndOrientation() {
         val oldScale=shell("settings get system font_scale")
         val oldOrientation=compose.activity.requestedOrientation

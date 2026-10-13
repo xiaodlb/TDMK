@@ -61,6 +61,7 @@ fun delete(id: String)
 fun read(id: String): Recurrence
 fun exclusions(id: String): List<RecurrenceExclusion>
 fun create(spec: RecurrenceSpec): Recurrence
+fun convert(taskId: String, spec: RecurrenceSpec): Recurrence
 fun writeKnownBatch(id: String, revisionNumber: Int, slots: List<LocalDate>, through: LocalDate): List<Task>
 fun reconcile(): Int
 fun reconcile(id: String): Int
@@ -71,6 +72,8 @@ fun delete(id: String)
 ```
 
 Reconciliation returns the count of created occurrences. Series/slot uniqueness and recorded exclusions prevent duplicates and recreation after user deletion. Each occurrence has independent task/checklist state; edits create bounded revisions. [`RecurrenceCalendar.slots(anchor: LocalDate, frequency: String, from: LocalDate, through: LocalDate): List<LocalDate>`](../app/src/main/java/com/xiaodlb/tdmk/data/RecurrenceCalendar.kt) enumerates inclusive nominal dates with monthly day clamping. Clock injection makes reconciliation deterministic in tests.
+
+`convert` requires an ordinary dated task whose stored date equals the new anchor. One Room transaction creates the template, attaches the existing task ID and immutable original slot, then reconciles due slots; failure rolls back the template, attachment and generated tasks. Task details exposes frequency previews, occurrence/series scope, pause/resume and scoped confirmed deletion through this repository.
 
 ## Errors and callers
 

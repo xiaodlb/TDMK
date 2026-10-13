@@ -59,6 +59,7 @@ class TaskDetailsModel : ViewModel() {
         if(seriesScope != wholeSeries) children = if(wholeSeries) series?.revisions?.last()?.checklist?.map {
             ChecklistDraft(UUID.randomUUID().toString(), null, it.text, false)
         }.orEmpty() else savedChildren.map { ChecklistDraft(it.id, it.id, it.text, it.isCompleted) }
+        if(!wholeSeries) frequency = series?.revisions?.last()?.revision?.frequency ?: "one_time"
         seriesScope = wholeSeries; error = null; updatePreview()
     } }
     fun cancelConfirmation() { if(!pending) confirmation = null }
