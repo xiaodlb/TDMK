@@ -18,7 +18,7 @@ class TaskChecklistRestartTest {
     private fun waitTag(tag:String) { compose.waitUntil(10_000) { compose.onAllNodesWithTag(tag).fetchSemanticsNodes().isNotEmpty() } }
     private fun click(tag:String) { val node=compose.onNodeWithTag(tag); if(!tag.startsWith("tab_") && !tag.startsWith("confirm_")) node.performScrollTo(); if(tag=="details_save") android.os.SystemClock.sleep(700); node.performClick() }
     private fun edit(tag:String,text:String)=compose.onNodeWithTag(tag).performScrollTo().performTextReplacement(text)
-    private fun open(id:String) { waitTag("tab_Tasks"); click("tab_Tasks"); waitTag("details_$id"); click("details_$id"); waitTag("new_child_text") }
+    private fun open(id:String) { waitTag("tab_Tasks"); click("tab_Tasks"); waitTag("task_tab_anytime"); click("task_tab_anytime"); waitTag("details_$id"); click("details_$id"); waitTag("new_child_text") }
     @Test fun aSaveThroughRealApp() {
         val task=provider.getTaskRepository().create(TaskContent("Task18 offline fixture",shortNote="Preserved note"))
         val subs=provider.getSubtaskRepository(); val retained=subs.create(task.id,"Original"); val deleted=subs.create(task.id,"Delete me")

@@ -42,7 +42,7 @@ class TaskDetailsTest {
         oldKeyboard=shell("settings get secure show_ime_with_hard_keyboard")
         shell("settings put secure show_ime_with_hard_keyboard 1")
         seeded=repository.create(TaskContent("Details ${UUID.randomUUID()}",shortNote="Saved note")); ownedTasks.add(seeded.id)
-        waitTag("tab_Tasks"); click("tab_Tasks"); waitTag("details_${seeded.id}")
+        waitTag("tab_Tasks"); click("tab_Tasks"); waitTag("task_tab_anytime"); click("task_tab_anytime"); waitTag("details_${seeded.id}")
     }
     @After fun clean() {
         provider.getDatabase().openHelper.writableDatabase.execSQL("DROP TRIGGER IF EXISTS fail_details")

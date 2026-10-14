@@ -39,7 +39,7 @@ class TaskChecklistTest {
     @Before fun setup() {
         oldKeyboard=shell("settings get secure show_ime_with_hard_keyboard"); shell("settings put secure show_ime_with_hard_keyboard 1")
         parent=tasks.create(TaskContent("Checklist ${UUID.randomUUID()}")); ids.add(parent.id)
-        waitTag("tab_Tasks"); click("tab_Tasks"); waitTag("details_${parent.id}")
+        waitTag("tab_Tasks"); click("tab_Tasks"); waitTag("task_tab_anytime"); click("task_tab_anytime"); waitTag("details_${parent.id}")
     }
     @After fun clean() {
         provider.getDatabase().openHelper.writableDatabase.execSQL("DROP TRIGGER IF EXISTS fail_checklist")

@@ -16,7 +16,7 @@ class TaskDetailsRestartTest {
     private val provider get()=(compose.activity.application as TdmkApplication).databaseProvider
     private val marker get()=File(compose.activity.filesDir,"task17-restart-check.json")
     private fun waitTag(tag:String) { compose.waitUntil(10_000) { compose.onAllNodesWithTag(tag).fetchSemanticsNodes().isNotEmpty() } }
-    private fun tasks() { waitTag("tab_Tasks"); compose.onNodeWithTag("tab_Tasks").performClick() }
+    private fun tasks() { waitTag("tab_Tasks"); compose.onNodeWithTag("tab_Tasks").performClick(); waitTag("task_tab_anytime"); compose.onNodeWithTag("task_tab_anytime").performClick() }
     @Test fun aSaveThroughRealApp() {
         val task=provider.getTaskRepository().create(TaskContent("Task17 restart fixture"))
         tasks(); waitTag("details_${task.id}")

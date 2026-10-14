@@ -8,6 +8,7 @@ import java.time.Clock
 sealed interface TaskContext {
     data object Anytime : TaskContext
     data object Today : TaskContext
+    data object Upcoming : TaskContext
     data object Home : TaskContext
     data class InList(val id: String) : TaskContext
 }
@@ -17,6 +18,7 @@ fun TaskContext.results(tasks: List<Task>, clock: Clock): List<Task> {
     return when (this) {
         TaskContext.Anytime -> views.anytime(tasks)
         TaskContext.Today -> views.today(tasks)
+        TaskContext.Upcoming -> views.upcoming(tasks)
         TaskContext.Home -> views.homeOverdueAndToday(tasks)
         is TaskContext.InList -> views.inList(tasks, id)
     }

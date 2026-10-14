@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.*
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.compose.ui.platform.LocalContext
@@ -23,7 +24,8 @@ import java.time.LocalDate
 
 /** Reusable real-storage host; outer shell supplies scrolling and safe/IME insets. */
 @Composable
-fun TaskWorkspace(provider: DatabaseProvider, context: TaskContext = TaskContext.Anytime, clock: Clock = Clock.systemDefaultZone(), returnFocusId: String? = null, onFocusReturned: () -> Unit = {}, onDetails: (String) -> Unit) {
+fun TaskWorkspace(provider: DatabaseProvider, context: TaskContext = TaskContext.Anytime, clock: Clock = Clock.systemDefaultZone(), returnFocusId: String? = null, onFocusReturned: () -> Unit = {}, onDetails: (String) -> Unit,
+    selectedTabKey: String? = null, onTabSelected: (String) -> Unit = {}, sharedDraft: MutableState<String>? = null) {
     val scope = rememberCoroutineScope()
     val keyboard = LocalSoftwareKeyboardController.current
     val view = androidx.compose.ui.platform.LocalView.current
@@ -34,7 +36,9 @@ fun TaskWorkspace(provider: DatabaseProvider, context: TaskContext = TaskContext
     var loaded by remember { mutableStateOf(false) }
     var loadError by remember { mutableStateOf(false) }
     var loadAttempt by remember { mutableIntStateOf(0) }
-    var draft by rememberSaveable { mutableStateOf("") }
+    var localDraft by rememberSaveable { mutableStateOf("") }
+    val draft = sharedDraft?.value ?: localDraft
+    fun updateDraft(value: String) { if(sharedDraft != null) sharedDraft.value = value else localDraft = value }
     var saving by remember { mutableStateOf(false) }
     var entryError by remember { mutableStateOf<String?>(null) }
     var savedMessage by remember { mutableStateOf<String?>(null) }
@@ -43,11 +47,19 @@ fun TaskWorkspace(provider: DatabaseProvider, context: TaskContext = TaskContext
     var today by remember { mutableStateOf(LocalDate.now(clock)) }
     var resumeTick by remember { mutableIntStateOf(0) }
     var recurrenceError by remember { mutableStateOf(false) }
-    LaunchedEffect(returnFocusId) {
+    val tabs = if(selectedTabKey == null) emptyList() else TaskTabs.available(lists)
+    val resolvedTabKey = selectedTabKey?.let { TaskTabs.resolve(it, lists) }
+    val activeTab = tabs.firstOrNull { it.key == resolvedTabKey }
+    val managing = activeTab?.key == TaskTabs.MANAGE
+    val activeContext = activeTab?.context ?: context
+    LaunchedEffect(loaded, resolvedTabKey, selectedTabKey) {
+        if(loaded && selectedTabKey != null && selectedTabKey != resolvedTabKey) onTabSelected(requireNotNull(resolvedTabKey))
+    }
+    LaunchedEffect(returnFocusId, activeContext) {
         if(returnFocusId != null) {
             // The modal owns a separate Android window; wait until the host owns focus again.
             withTimeoutOrNull(2_000) { while(!view.hasWindowFocus()) delay(16) }
-            val visible = context.results(candidates, clock).any { it.id == returnFocusId }
+            val visible = !managing && activeContext.results(candidates, clock).any { it.id == returnFocusId }
             (if(visible) rowFocus[returnFocusId] ?: hostFocus else hostFocus).requestFocus()
             onFocusReturned()
         }
@@ -78,11 +90,15 @@ fun TaskWorkspace(provider: DatabaseProvider, context: TaskContext = TaskContext
         if(saving || !loaded) return
         try { StoredText.label(draft) } catch(_: IllegalArgumentException) { entryError = "Enter a valid, nonblank title."; return }
         val title = draft
+        val targetListId = when(activeContext) {
+            is TaskContext.InList -> activeContext.id
+            else -> lists.firstOrNull { it.isDefault }?.id
+        }
         saving = true; entryError = null; savedMessage = null
         scope.launch {
             try {
-                val task = withContext(Dispatchers.IO) { provider.getTaskRepository().create(TaskContent(title, (context as? TaskContext.InList)?.id)) }
-                draft = ""; savedMessage = "Task added to ${lists.firstOrNull { it.id == task.listId }?.name ?: "your list"}."
+                val task = withContext(Dispatchers.IO) { provider.getTaskRepository().create(TaskContent(title, targetListId)) }
+                updateDraft(""); savedMessage = "Task added to ${lists.firstOrNull { it.id == task.listId }?.name ?: "your list"}."
             } catch(cancelled: CancellationException) { throw cancelled }
             catch(_: Exception) { entryError = "Could not save task. Your title is kept; try Save again." }
             finally { saving = false }
@@ -95,13 +111,21 @@ fun TaskWorkspace(provider: DatabaseProvider, context: TaskContext = TaskContext
         }
         if(recurrenceError) Text("Could not refresh repeating tasks. Reopen this view to retry.", color = MaterialTheme.colorScheme.error)
         if(!loaded) { if(!loadError) CircularProgressIndicator(); return@Column }
-        QuickEntry(draft, saving, entryError, { draft = it; entryError = null; savedMessage = null }, ::save,
-            { draft = ""; entryError = null; savedMessage = null; keyboard?.hide() })
+        if(selectedTabKey != null) ScrollableTabRow(selectedTabIndex = tabs.indexOfFirst { it.key == resolvedTabKey }.coerceAtLeast(0),
+            edgePadding = 0.dp, modifier = Modifier.fillMaxWidth().testTag("task_subtabs")) {
+            tabs.forEach { tab -> Tab(selected = tab.key == resolvedTabKey, onClick = { onTabSelected(tab.key) },
+                modifier = Modifier.testTag("task_tab_${tab.key.replace(':', '_')}").semantics { contentDescription = tab.label },
+                text = { Text(tab.label, maxLines = 1) }) }
+        }
+        if(managing) { Text("Manage lists", style = MaterialTheme.typography.titleMedium, modifier = Modifier.semantics { heading() });
+            Text("List management opens here in the next update.", color = MaterialTheme.colorScheme.onSurfaceVariant); return@Column }
+        QuickEntry(draft, saving, entryError, { updateDraft(it); entryError = null; savedMessage = null }, ::save,
+            { updateDraft(""); entryError = null; savedMessage = null; keyboard?.hide() })
         savedMessage?.let { Text(it, Modifier.testTag("entry_success").semantics { liveRegion = LiveRegionMode.Polite }, style = MaterialTheme.typography.bodyMedium) }
-        Text(when(context) { TaskContext.Anytime -> "Anytime"; TaskContext.Today -> "Today"; TaskContext.Home -> "Overdue and today"; is TaskContext.InList -> lists.firstOrNull { it.id == context.id }?.name ?: "List" },
+        Text(activeTab?.label ?: when(activeContext) { TaskContext.Anytime -> "Anytime"; TaskContext.Today -> "Today"; TaskContext.Upcoming -> "Upcoming"; TaskContext.Home -> "Overdue and today"; is TaskContext.InList -> lists.firstOrNull { it.id == activeContext.id }?.name ?: "List" },
             style = MaterialTheme.typography.titleMedium, modifier = Modifier.focusRequester(hostFocus).focusable().semantics { heading() })
-        val results = remember(candidates, context, today) { context.results(candidates, Clock.fixed(today.atStartOfDay(clock.zone).toInstant(), clock.zone)) }
-        if(results.isEmpty()) Text("No tasks here yet.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        val results = remember(candidates, activeContext, today) { activeContext.results(candidates, Clock.fixed(today.atStartOfDay(clock.zone).toInstant(), clock.zone)) }
+        if(results.isEmpty()) Text("No tasks here yet.", modifier = Modifier.testTag("tasks_empty"), color = MaterialTheme.colorScheme.onSurfaceVariant)
         results.forEach { task -> key(task.id) {
             TaskRow(task, lists.firstOrNull { it.id == task.listId }?.name ?: "List", task.id in pendingIds, rowErrors[task.id], { id ->
                 if(id !in pendingIds) {

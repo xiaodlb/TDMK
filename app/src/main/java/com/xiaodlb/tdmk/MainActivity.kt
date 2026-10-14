@@ -9,6 +9,7 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -29,6 +30,8 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         observeAppearance()
         setContent {
+            val taskTab = rememberSaveable { mutableStateOf(getSharedPreferences("task_navigation", MODE_PRIVATE).getString("selected_tab", TaskTabs.TODAY) ?: TaskTabs.TODAY) }
+            val taskDraft = rememberSaveable { mutableStateOf("") }
             val state = appearance
             val dark = (state.saved ?: Appearance.SYSTEM).resolveDark(isSystemInDarkTheme())
             SideEffect {
@@ -41,7 +44,10 @@ class MainActivity : ComponentActivity() {
             AppTheme(dark) {
                 Surface(Modifier.fillMaxSize().testTag(if (dark) "theme_dark" else "theme_light")) {
                     if (state.saved != null) NavigationShell(state.saved, !state.pending, state.error, ::saveAppearance) {
-                        TaskWorkspace(provider, returnFocusId = details.returnFocusId, onFocusReturned = details::focusReturned, onDetails = { id -> requestTaskDetails(id) })
+                        TaskWorkspace(provider, returnFocusId = details.returnFocusId, onFocusReturned = details::focusReturned,
+                            onDetails = { id -> requestTaskDetails(id) }, selectedTabKey = taskTab.value,
+                            onTabSelected = { key -> taskTab.value = key; getSharedPreferences("task_navigation", MODE_PRIVATE).edit().putString("selected_tab", key).apply() },
+                            sharedDraft = taskDraft)
                     }
                     else Column(Modifier.safeDrawingPadding().padding(ShellSpacing.page), horizontalAlignment = Alignment.CenterHorizontally) {
                         if (state.error) {
