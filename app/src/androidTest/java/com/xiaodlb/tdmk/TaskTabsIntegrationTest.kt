@@ -49,6 +49,7 @@ class TaskTabsIntegrationTest {
         val beyond = task("Beyond ${UUID.randomUUID()}", custom.id, today.plusDays(8))
         val old = task("Old ${UUID.randomUUID()}", custom.id, today.minusDays(1))
         tab("today"); present(due.id); absent(old.id)
+        compose.onNodeWithTag("complete_${due.id}").assertContentDescriptionContains("Complete ${due.title}")
         tab("upcoming"); present(future.id); absent(beyond.id)
         tab("list_${custom.id}"); present(old.id); present(beyond.id)
         compose.onNodeWithTag("complete_${due.id}").performScrollTo().performClick()
@@ -60,6 +61,7 @@ class TaskTabsIntegrationTest {
         compose.onNodeWithTag("tab_Tasks").performClick()
         compose.onNodeWithTag("task_tab_list_${custom.id}").assertIsSelected()
         compose.activityRule.scenario.recreate()
+        compose.waitUntil(10_000) { compose.onAllNodesWithTag("task_tab_list_${custom.id}").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithTag("task_tab_list_${custom.id}").assertIsSelected()
         lists.delete(custom.id)
         compose.waitUntil(10_000) { compose.onAllNodesWithTag("task_tab_list_${custom.id}").fetchSemanticsNodes().isEmpty() }
@@ -104,12 +106,16 @@ class TaskTabsIntegrationTest {
         try {
             shell("settings put system font_scale 2.0")
             compose.activityRule.scenario.onActivity { it.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE }
+            compose.waitUntil(10_000) { compose.activity.resources.configuration.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE &&
+                compose.onAllNodesWithTag("task_${ids.last()}").fetchSemanticsNodes().isNotEmpty() }
             compose.waitForIdle()
+            android.os.SystemClock.sleep(500)
             compose.onNodeWithTag("task_${ids.last()}").performScrollTo().assertExists()
+            compose.onNodeWithTag("task_subtabs").performScrollTo()
             compose.onNodeWithTag("task_tab_list_${custom.id}").assertIsSelected()
-            compose.onNodeWithTag("task_tab_list_${empty.id}").performScrollTo().performClick()
+            tab("list_${empty.id}")
             compose.onNodeWithTag("task_title").performScrollTo().assertExists()
-            compose.onNodeWithTag("tasks_empty").assertExists()
+            compose.waitUntil(10_000) { compose.onAllNodesWithTag("tasks_empty").fetchSemanticsNodes().isNotEmpty() }
         } finally {
             shell("settings put system font_scale $priorScale")
             compose.activityRule.scenario.onActivity { it.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED }
